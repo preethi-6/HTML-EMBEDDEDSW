@@ -1,0 +1,298 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>library_utils module &mdash; EMBEDDEDSW DOCUMENATION 2025.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=e5803c29"></script>
+      <script src="_static/doctools.js?v=888ff710"></script>
+      <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="load_example module" href="load_example.html" />
+    <link rel="prev" title="get_template_data module" href="get_template_data.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            EMBEDDEDSW DOCUMENATION
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">my_files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="build_app.html">build_app module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build_bsp.html">build_bsp module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_bsp.html">config_bsp module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_app.html">create_app module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_bsp.html">create_bsp module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_example.html">create_example module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="get_template_data.html">get_template_data module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">library_utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#library_utils.Library"><code class="docutils literal notranslate"><span class="pre">Library</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.add_lib_for_apps"><code class="docutils literal notranslate"><span class="pre">Library.add_lib_for_apps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.config_lib"><code class="docutils literal notranslate"><span class="pre">Library.config_lib()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.copy_lib_src"><code class="docutils literal notranslate"><span class="pre">Library.copy_lib_src()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.gen_lib_metadata"><code class="docutils literal notranslate"><span class="pre">Library.gen_lib_metadata()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.get_default_lib_params"><code class="docutils literal notranslate"><span class="pre">Library.get_default_lib_params()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.get_depends_libs"><code class="docutils literal notranslate"><span class="pre">Library.get_depends_libs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.is_valid_lib"><code class="docutils literal notranslate"><span class="pre">Library.is_valid_lib()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.modify_cmake_subdirs"><code class="docutils literal notranslate"><span class="pre">Library.modify_cmake_subdirs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.remove_lib"><code class="docutils literal notranslate"><span class="pre">Library.remove_lib()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.validate_drv_for_lib"><code class="docutils literal notranslate"><span class="pre">Library.validate_drv_for_lib()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.validate_lib_in_bsp"><code class="docutils literal notranslate"><span class="pre">Library.validate_lib_in_bsp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.validate_lib_name"><code class="docutils literal notranslate"><span class="pre">Library.validate_lib_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library_utils.Library.validate_lib_param"><code class="docutils literal notranslate"><span class="pre">Library.validate_lib_param()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="load_example.html">load_example module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html">main module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="open_amp.html">open_amp module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reconfig_bsp.html">reconfig_bsp module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="regen_bsp.html">regen_bsp module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="regen_linker.html">regen_linker module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="repo.html">repo module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="retarget_app.html">retarget_app module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="validate_bsp.html">validate_bsp module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="validate_hw.html">validate_hw module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">EMBEDDEDSW DOCUMENATION</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">my_files</a></li>
+      <li class="breadcrumb-item active">library_utils module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/library_utils.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-library_utils">
+<span id="library-utils-module"></span><h1>library_utils module<a class="headerlink" href="#module-library_utils" title="Permalink to this heading"></a></h1>
+<p>This module acts as a supporting module to get/set library related information
+inside the bsp. It helps in validating the library input, generating the
+library paramters database and adding/modifying the library when all the
+criteria are met. It doesnt have any main() function and running this
+module independently is not intended.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="library_utils.Library">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">library_utils.</span></span><span class="sig-name descname"><span class="pre">Library</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bsp_os</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sdt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmake_paths_append</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">libsrc_folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repo_info</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/library_utils.html#Library"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#library_utils.Library" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="repo.html#repo.Repo" title="repo.Repo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Repo</span></code></a></p>
+<p>This class contains attributes and functions that help in validating
+library related inputs and adding a library to the created bsp.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.add_lib_for_apps">
+<span class="sig-name descname"><span class="pre">add_lib_for_apps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#library_utils.Library.add_lib_for_apps" title="Permalink to this definition"></a></dt>
+<dd><p>Adds library to the bsp. Creates metadata if needed for the library,
+runs cmake configure to prepare the build area for library
+compilation and creates the library configuration of the bsp.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app_name</strong> (<em>str</em>) – template app name. If template depends on certain libs, it
+copies their source to the libsrc and it fetches the req
+library configurations for those libs</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.config_lib">
+<span class="sig-name descname"><span class="pre">config_lib</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comp_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lib_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmake_cmd_append</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_app</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#library_utils.Library.config_lib" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.copy_lib_src">
+<span class="sig-name descname"><span class="pre">copy_lib_src</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lib</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/library_utils.html#Library.copy_lib_src"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#library_utils.Library.copy_lib_src" title="Permalink to this definition"></a></dt>
+<dd><p>Copies the src directory of the passed library from the respective path
+of embeddedsw to the libsrc folder of bsp.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>lib</strong> (<em>str</em>) – library whose source code needs to be copied</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Library path inside embeddedsw
+| srcdir (str): Path of src folder of library inside embeddedsw
+| dstdir (str): Path of src folder inside libsrc folder of bsp</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><div class="line-block">
+<div class="line">libdir (str)</div>
+</div>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.gen_lib_metadata">
+<span class="sig-name descname"><span class="pre">gen_lib_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lib</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/library_utils.html#Library.gen_lib_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#library_utils.Library.gen_lib_metadata" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.get_default_lib_params">
+<span class="sig-name descname"><span class="pre">get_default_lib_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">build_lib_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lib_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/library_utils.html#Library.get_default_lib_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#library_utils.Library.get_default_lib_params" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a library configuration data that contains all the available
+parameters and their values of each library added in the bsp.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>build_lib_dir</strong> (<em>str</em>) – Cmake directory where the libraries are configured and compiled</p></li>
+<li><p><strong>lib_list</strong> (<em>str</em>) – List of libraries added in the bsp.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary that contains all the available parameters and
+their values of each library added in the bsp.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>default_lib_config (dict)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.get_depends_libs">
+<span class="sig-name descname"><span class="pre">get_depends_libs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lib_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lib_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/library_utils.html#Library.get_depends_libs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#library_utils.Library.get_depends_libs" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.is_valid_lib">
+<span class="sig-name descname"><span class="pre">is_valid_lib</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comp_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent_discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/library_utils.html#Library.is_valid_lib"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#library_utils.Library.is_valid_lib" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.modify_cmake_subdirs">
+<span class="sig-name descname"><span class="pre">modify_cmake_subdirs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lib_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'add'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/library_utils.html#Library.modify_cmake_subdirs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#library_utils.Library.modify_cmake_subdirs" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.remove_lib">
+<span class="sig-name descname"><span class="pre">remove_lib</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lib</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/library_utils.html#Library.remove_lib"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#library_utils.Library.remove_lib" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.validate_drv_for_lib">
+<span class="sig-name descname"><span class="pre">validate_drv_for_lib</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comp_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drvlist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/library_utils.html#Library.validate_drv_for_lib"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#library_utils.Library.validate_drv_for_lib" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.validate_lib_in_bsp">
+<span class="sig-name descname"><span class="pre">validate_lib_in_bsp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lib</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/library_utils.html#Library.validate_lib_in_bsp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#library_utils.Library.validate_lib_in_bsp" title="Permalink to this definition"></a></dt>
+<dd><p>Checks if the passed library name from the user exists in the bsp. This
+is a helper function to support remove library and set property usecases.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>lib</strong> (<em>str</em>) – Library name that needs to be validated</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.validate_lib_name">
+<span class="sig-name descname"><span class="pre">validate_lib_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lib</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/library_utils.html#Library.validate_lib_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#library_utils.Library.validate_lib_name" title="Permalink to this definition"></a></dt>
+<dd><p>Checks if the passed library name from the user is valid for the sdt
+proc and os combination. Exits with valid assertion if the user input
+is wrong.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>lib</strong> (<em>str</em>) – Library name that needs to be validated</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="library_utils.Library.validate_lib_param">
+<span class="sig-name descname"><span class="pre">validate_lib_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lib</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lib_param</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/library_utils.html#Library.validate_lib_param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#library_utils.Library.validate_lib_param" title="Permalink to this definition"></a></dt>
+<dd><p>Checks if the passed library parameter that needs to be set in library
+configuration is valid. Exits with a valid assertion if parameter name
+is wrong. This acts as a helper in set property usecase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lib</strong> (<em>|</em>) – Library name whose config needs to be changed</p></li>
+<li><p><strong>lib_param</strong> (<em>|</em>) – Library parameter that needs to be changed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="get_template_data.html" class="btn btn-neutral float-left" title="get_template_data module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="load_example.html" class="btn btn-neutral float-right" title="load_example module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, PREETHI C.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

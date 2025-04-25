@@ -1,0 +1,1033 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>create_bsp &mdash; EMBEDDEDSW DOCUMENATION 2025.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=e5803c29"></script>
+      <script src="../_static/doctools.js?v=888ff710"></script>
+      <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EMBEDDEDSW DOCUMENATION
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">my_files</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EMBEDDEDSW DOCUMENATION</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">create_bsp</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for create_bsp</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.</span>
+<span class="c1"># SPDX-License-Identifier: MIT</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module creates a domain and a bsp for the passed processor, os and system</span>
+<span class="sd">device tree combination.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">textwrap</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">utils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">library_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">Library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">repo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Repo</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">validate_bsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Validation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">validate_hw</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidateHW</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Domain"><a class="viewcode-back" href="../create_bsp.html#create_bsp.Domain">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Domain</span><span class="p">(</span><span class="n">Repo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class helps in creating a software domain. This contains functions</span>
+<span class="sd">    to create the domain&#39;s directory structure, validate the user inputs for</span>
+<span class="sd">    the domain on demand and manipulate the cmake toolchain file as per the</span>
+<span class="sd">    user inputs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">repo_yaml_path</span><span class="o">=</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;repo_info&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_abs_path</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;ws_dir&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;proc&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">os</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;os&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;template&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compiler_flags</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">toolchain_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sdt</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_abs_path</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;sdt&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">family</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_family</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">include_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;include&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lib_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;lib&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;libsrc&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sdt_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;hw_artifacts&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain_config_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;bsp.yaml&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repo_paths_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">repo_schema</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">drv_info</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">os_info</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_mode</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compiler</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;compiler&quot;</span><span class="p">]</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_ip_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_inputs</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_family</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function intends to fetch the platform/family name from the input</span>
+<span class="sd">        sdt. Usage of this is under discussion and this may be removed later.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            family (str): versal/zynqmp</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">family_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;[ \t\n]*family = </span><span class="se">\&quot;</span><span class="s2">(.*?)</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">&quot;cpus_a53&quot;</span> <span class="ow">in</span> <span class="n">content</span> <span class="ow">or</span> <span class="s1">&#39;family = &quot;ZynqMP&quot;;&#39;</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;ZynqMP&quot;</span>
+            <span class="k">elif</span> <span class="s2">&quot;cpus_a72&quot;</span> <span class="ow">in</span> <span class="n">content</span> <span class="ow">or</span> <span class="s1">&#39;family = &quot;Versal&quot;;&#39;</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;Versal&quot;</span>
+            <span class="k">elif</span> <span class="s2">&quot;cpus_a9&quot;</span> <span class="ow">in</span> <span class="n">content</span> <span class="ow">or</span> <span class="s1">&#39;family = &quot;Zynq&quot;;&#39;</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;Zynq&quot;</span>
+            <span class="k">elif</span> <span class="s1">&#39;family = &quot;VersalNet&quot;;&#39;</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;VersalNet&quot;</span>
+            <span class="k">elif</span> <span class="s1">&#39;family = &quot;VersalGen2&quot;;&#39;</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;VersalGen2&quot;</span>
+            <span class="k">elif</span> <span class="s2">&quot;cpus_a78&quot;</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;VersalNet&quot;</span>
+            <span class="k">elif</span> <span class="n">family_str</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">family_str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If User wants to validate the inputs before creating the domain,</span>
+<span class="sd">        &#39;VALIDATE_ARGS&#39; needs to be set over console. Once set, this function</span>
+<span class="sd">        will come into action and validate if the processor, the os, the</span>
+<span class="sd">        template app passed over command line are valid or not for the</span>
+<span class="sd">        sdt input.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">cpu_list_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;cpulist.yaml&quot;</span><span class="p">)</span>
+        <span class="n">dump</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">discard_dump</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_file</span><span class="p">(</span><span class="n">cpu_list_file</span><span class="p">):</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;lopper --werror -f -O </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="si">}</span><span class="s2"> -i lop-cpulist.dts </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">cwd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span>
+                <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Generating CPU list&quot;</span><span class="p">,</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;CPU List generation failed.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">cpulist_metafiles</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cpulist.yaml&quot;</span><span class="p">,</span><span class="s2">&quot;lop-cpulist.dts.dtb&quot;</span><span class="p">,</span><span class="s2">&quot;lop-cpulist.dts.pp&quot;</span><span class="p">]</span>
+        <span class="n">avail_cpu_data</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fetch_yaml_data</span><span class="p">(</span><span class="n">cpu_list_file</span><span class="p">,</span> <span class="s2">&quot;cpulist&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">avail_cpu_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">remove_directory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="n">cpulist_metafiles</span><span class="p">,</span> <span class="n">force_remove</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Please pass a valid processor name. Valid Processor Names for the given SDT are: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">avail_cpu_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;a53&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_mode</span> <span class="o">==</span> <span class="s2">&quot;32-bit&quot;</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">remove_directory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="n">cpulist_metafiles</span><span class="p">,</span> <span class="n">force_remove</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid mode configuration, 32-bit mode configuration is applicable only for ZynqMP A53 processors&quot;</span>
+            <span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span>
+            <span class="n">validate_obj</span> <span class="o">=</span> <span class="n">ValidateHW</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">os</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">repo_yaml_path</span>
+            <span class="p">)</span>
+            <span class="n">validate_obj</span><span class="o">.</span><span class="n">validate_hw</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;VALIDATE_ARGS&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;True&quot;</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Validating inputs&quot;</span><span class="p">)</span>
+            <span class="n">app_list_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;app_list.yaml&quot;</span><span class="p">)</span>
+            <span class="n">lib_list_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;lib_list.yaml&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_file</span><span class="p">(</span><span class="n">app_list_file</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_file</span><span class="p">(</span><span class="n">lib_list_file</span><span class="p">):</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;lopper --werror -f -O </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2"> -- baremetal_getsupported_comp_xlnx </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">repo_yaml_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">cwd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span>
+                    <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Getting supported component list&quot;</span><span class="p">,</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Could not get the supported component list&quot;</span>
+                <span class="p">)</span>
+            <span class="n">proc_data</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fetch_yaml_data</span><span class="p">(</span><span class="n">app_list_file</span><span class="p">,</span> <span class="s2">&quot;app_list&quot;</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="p">]</span>
+            <span class="n">Validation</span><span class="o">.</span><span class="n">validate_template_name</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="n">proc_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">os</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">avail_cpu_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Domain.build_dir_struct"><a class="viewcode-back" href="../create_bsp.html#create_bsp.Domain.build_dir_struct">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_dir_struct</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates the include, lib and libsrc folder inside bsp directory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">include_folder</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lib_folder</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt_folder</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_dir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">get_dir_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="p">),</span> <span class="s2">&quot;drivers&quot;</span><span class="p">),</span> <span class="n">silent_discard</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">!=</span> <span class="s2">&quot;versal_plm&quot;</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">copy_directory</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">get_dir_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="p">),</span> <span class="s2">&quot;drivers&quot;</span><span class="p">),</span>
+                                 <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt_folder</span><span class="p">),</span> <span class="s2">&quot;drivers&quot;</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found HLS driver within SDT, copying the sources&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">family</span> <span class="o">==</span> <span class="s2">&quot;ZynqMP&quot;</span><span class="p">:</span>
+            <span class="n">init_file</span> <span class="o">=</span> <span class="s2">&quot;psu_init&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">family</span> <span class="o">==</span> <span class="s2">&quot;Zynq&quot;</span><span class="p">:</span>
+            <span class="n">init_file</span> <span class="o">=</span> <span class="s2">&quot;ps7_init&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">init_file</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">init_file</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">get_dir_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">init_file</span><span class="si">}</span><span class="s2">.c&quot;</span><span class="p">),</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt_folder</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">init_file</span><span class="si">}</span><span class="s2">.c&quot;</span><span class="p">),</span> <span class="n">silent_discard</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">get_dir_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">init_file</span><span class="si">}</span><span class="s2">.h&quot;</span><span class="p">),</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt_folder</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">init_file</span><span class="si">}</span><span class="s2">.h&quot;</span><span class="p">),</span> <span class="n">silent_discard</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+<div class="viewcode-block" id="Domain.toolchain_intr_mapping"><a class="viewcode-back" href="../create_bsp.html#create_bsp.Domain.toolchain_intr_mapping">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">toolchain_intr_mapping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        We have reference toolchain files in embeddedsw which contains default</span>
+<span class="sd">        compiler related cmake inputs. This function copies the toolchain file</span>
+<span class="sd">        according to user os and processor input in the domain directory. Once</span>
+<span class="sd">        copied, it manipulates few entries in the file needed for specific proc</span>
+<span class="sd">        /os/app scenario.</span>
+
+<span class="sd">        In addition, this function also processes the sdt directory to create a</span>
+<span class="sd">        a single system dts file that has interrupts correctly mapped as per</span>
+<span class="sd">        the input processor.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            sdt (str):</span>
+<span class="sd">                Processed system device tree file that would be used across the</span>
+<span class="sd">                created domain for further processing.</span>
+<span class="sd">            toolchain_file (str):</span>
+<span class="sd">                Toolchain file for cmake infra that would be used across the</span>
+<span class="sd">                created domain for builds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dump</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">discard_dump</span><span class="p">()</span>
+        <span class="c1"># no gic mapping is needed for procs other than APU and RPU</span>
+        <span class="n">proc_lops_specs_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;a53&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;cortexa53&quot;</span><span class="p">,</span> <span class="s2">&quot;lop-a53-imux&quot;</span><span class="p">,</span> <span class="s2">&quot;arm&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;a72&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;cortexa72&quot;</span><span class="p">,</span> <span class="s2">&quot;lop-a72-imux&quot;</span><span class="p">,</span> <span class="s2">&quot;arm&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;a78&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;cortexa78&quot;</span><span class="p">,</span> <span class="s2">&quot;lop-a78-imux&quot;</span><span class="p">,</span> <span class="s2">&quot;arm&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;r52&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;cortexr52&quot;</span><span class="p">,</span> <span class="s2">&quot;lop-r52-imux&quot;</span><span class="p">,</span> <span class="s2">&quot;arm&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;r5&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;cortexr5&quot;</span><span class="p">,</span> <span class="s2">&quot;lop-r5-imux&quot;</span><span class="p">,</span> <span class="s2">&quot;arm&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;a9&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;cortexa9&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;arm&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;pmu&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;microblaze-pmu&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;microblaze&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;pmc_riscv&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;microblaze_riscv&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;microblaze_riscv&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;pmc&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;microblaze-plm&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;microblaze&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;psm&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;microblaze-psm&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;microblaze&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;asu&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;microblaze_riscv&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;microblaze&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;microblaze_riscv&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;microblaze_riscv&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;microblaze_riscv&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;microblaze&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;microblaze&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;microblaze&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="n">lops_file</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">out_dts_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt_folder</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2">_baremetal.dts&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Save unpruned SDT as it may be used later</span>
+        <span class="n">ori_sdt_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt_folder</span><span class="p">,</span> <span class="s2">&quot;sdt.dts&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">!=</span> <span class="s2">&quot;versal_plm&quot;</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;lopper -f -O </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="si">}</span><span class="s2"> --enhanced  --permissive </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">ori_sdt_path</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">dump</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                         <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Generating Flat DT from SDT (Unpruned)&quot;</span><span class="p">,</span>
+                         <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Flat DT generation (Unpruned) failed&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">toolchain_file_copy</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">proc_lops_specs_map</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_ip_name</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;gcc&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">compiler</span><span class="p">:</span>
+                    <span class="n">toolchain_file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">proc_lops_specs_map</span><span class="p">[</span><span class="n">val</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">_toolchain.cmake&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">toolchain_file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">proc_lops_specs_map</span><span class="p">[</span><span class="n">val</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compiler</span><span class="si">}</span><span class="s2">_toolchain.cmake&quot;</span>
+                <span class="n">toolchain_file_path</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_high_precedence_path</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">repo_paths_list</span><span class="p">,</span> <span class="s2">&quot;toolchain File&quot;</span><span class="p">,</span> <span class="s2">&quot;cmake&quot;</span><span class="p">,</span> <span class="s2">&quot;toolchainfiles&quot;</span><span class="p">,</span> <span class="n">toolchain_file_name</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">proc_lops_specs_map</span><span class="p">[</span><span class="n">val</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="n">lops_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">proc_lops_specs_map</span><span class="p">[</span><span class="n">val</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">.dts&quot;</span>
+                <span class="n">toolchain_file_copy</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="n">toolchain_file_name</span><span class="p">)</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">toolchain_file_path</span><span class="p">,</span> <span class="n">toolchain_file_copy</span><span class="p">)</span>
+                <span class="n">specs_file</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_high_precedence_path</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">repo_paths_list</span><span class="p">,</span> <span class="s2">&quot;Xilinx.spec File&quot;</span><span class="p">,</span> <span class="s2">&quot;scripts&quot;</span><span class="p">,</span> <span class="s2">&quot;specs&quot;</span><span class="p">,</span> <span class="n">proc_lops_specs_map</span><span class="p">[</span><span class="n">val</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;Xilinx.spec&quot;</span>
+                <span class="p">)</span>
+                <span class="n">specs_copy_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s1">&#39;Xilinx.spec&#39;</span><span class="p">)</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">specs_file</span><span class="p">,</span> <span class="n">specs_copy_file</span><span class="p">)</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;psx_pmc_0&quot;</span><span class="p">,</span> <span class="s2">&quot;psx_psm_0&quot;</span><span class="p">,</span> <span class="s2">&quot;pmc_0&quot;</span><span class="p">,</span> <span class="s2">&quot;asu&quot;</span><span class="p">]:</span>
+            <span class="n">updated_string</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">set( CMAKE_MACHINE &quot;VersalNet&quot; CACHE STRING &quot;cmake machine&quot; FORCE)</span>
+<span class="s1">set( CMAKE_SUBMACHINE &quot;VersalNet&quot; CACHE STRING &quot;cmake submachine&quot; FORCE)</span>
+<span class="s1">&#39;&#39;&#39;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc</span> <span class="o">==</span> <span class="s2">&quot;asu&quot;</span><span class="p">:</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">add_newline</span><span class="p">(</span>
+                    <span class="n">toolchain_file_copy</span><span class="p">,</span>
+                    <span class="n">updated_string</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">replace_line</span><span class="p">(</span>
+                    <span class="n">toolchain_file_copy</span><span class="p">,</span>
+                    <span class="s1">&#39;CMAKE_MACHINE &quot;Versal&#39;</span><span class="p">,</span>
+                    <span class="n">updated_string</span>
+                    <span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;r5&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc</span> <span class="ow">and</span> <span class="s2">&quot;ZynqMP&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">family</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">replace_line</span><span class="p">(</span>
+                <span class="n">toolchain_file_copy</span><span class="p">,</span>
+                <span class="s1">&#39;CMAKE_MACHINE &quot;Versal&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;set( CMAKE_MACHINE &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">family</span><span class="si">}</span><span class="s1">&quot;)&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;a53&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_mode</span> <span class="o">==</span> <span class="s2">&quot;32-bit&quot;</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">replace_line</span><span class="p">(</span>
+                <span class="n">toolchain_file_copy</span><span class="p">,</span>
+                <span class="s1">&#39;CMAKE_SYSTEM_PROCESSOR &quot;cortexa53&quot;&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;set( CMAKE_SYSTEM_PROCESSOR &quot;cortexa53-32&quot;)&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">family</span> <span class="o">==</span> <span class="s2">&quot;VersalGen2&quot;</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">replace_line</span><span class="p">(</span>
+                <span class="n">toolchain_file_copy</span><span class="p">,</span>
+                <span class="s1">&#39;CMAKE_SUBMACHINE &quot;VersalNet&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;set( CMAKE_SUBMACHINE &quot;VersalGen2&quot; CACHE STRING &quot;cmake submachine&quot; FORCE)&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">family</span> <span class="o">==</span> <span class="s2">&quot;SpartanUP&quot;</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">add_newline</span><span class="p">(</span>
+                <span class="n">toolchain_file_copy</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;set(CMAKE_MACHINE &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">family</span><span class="si">}</span><span class="s1">&quot;)&#39;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">add_newline</span><span class="p">(</span>
+                <span class="n">toolchain_file_copy</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;set(TEMPLATE &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="si">}</span><span class="s1">&quot;)&#39;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># freertos needs a separate CMAKE_SYSTEM_NAME</span>
+        <span class="k">if</span> <span class="s2">&quot;freertos&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">os</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">add_newline</span><span class="p">(</span><span class="n">toolchain_file_copy</span><span class="p">,</span> <span class="s2">&quot;set( CMAKE_SYSTEM_NAME FreeRTOS)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;nt&quot;</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">add_newline</span><span class="p">(</span><span class="n">toolchain_file_copy</span><span class="p">,</span> <span class="s2">&quot;set( CMAKE_HOST_NAME Windows)&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">add_newline</span><span class="p">(</span><span class="n">toolchain_file_copy</span><span class="p">,</span> <span class="s2">&quot;set( CMAKE_HOST_NAME Linux)&quot;</span><span class="p">)</span>
+        <span class="c1"># Do the gic pruning in the sdt for APU/RPU.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdt</span> <span class="o">!=</span> <span class="n">out_dts_path</span><span class="p">:</span>
+            <span class="n">iss_file</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">find_file</span><span class="p">(</span><span class="s2">&quot;*.iss&quot;</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_dir_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="p">))</span>
+            <span class="n">domain_dts</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">iss_file</span><span class="p">:</span>
+                <span class="n">domain_yaml</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt_folder</span><span class="p">,</span> <span class="s2">&quot;domains.yaml&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found isospec file inside SDT, Processing&quot;</span><span class="p">)</span>
+                <span class="c1"># Convert ISS to domain YAML</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;lopper -f -O </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt_folder</span><span class="si">}</span><span class="s2"> --enhanced </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2"> -- isospec --audit </span><span class="si">{</span><span class="n">iss_file</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">domain_yaml</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Isospec processing&quot;</span><span class="p">,</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Isospec processing failed&quot;</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_file</span><span class="p">(</span><span class="n">domain_yaml</span><span class="p">,</span> <span class="n">silent_discard</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                    <span class="n">domain_name</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_domain_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="p">,</span> <span class="n">domain_yaml</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">domain_name</span><span class="p">:</span>
+                        <span class="n">domain_dts</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">if</span> <span class="n">lops_file</span><span class="p">:</span>
+                            <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;lopper -f -O </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt_folder</span><span class="si">}</span><span class="s2"> --enhanced -i </span><span class="si">{</span><span class="n">lops_file</span><span class="si">}</span><span class="s2"> -i lop-ttc-split.dts -t </span><span class="si">{</span><span class="n">domain_name</span><span class="si">}</span><span class="s2"> -a domain_access --auto  -x &#39;*.yaml&#39; -i </span><span class="si">{</span><span class="n">domain_yaml</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">out_dts_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                                <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Processing domain_yaml&quot;</span><span class="p">,</span>
+                                <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Could not process the domain_yaml&quot;</span>
+                            <span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;lopper -f -O </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt_folder</span><span class="si">}</span><span class="s2"> --enhanced -t </span><span class="si">{</span><span class="n">domain_name</span><span class="si">}</span><span class="s2"> -a domain_access --auto  -x &#39;*.yaml&#39; -i </span><span class="si">{</span><span class="n">domain_yaml</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">out_dts_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                                <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Processing domain_yaml&quot;</span><span class="p">,</span>
+                                <span class="n">error_message</span> <span class="o">=</span><span class="s2">&quot;Could not process the domain_yaml&quot;</span>
+                            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">domain_dts</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">lops_file</span><span class="p">:</span>
+                    <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;lopper -f --enhanced -O </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="si">}</span><span class="s2"> -i </span><span class="si">{</span><span class="n">lops_file</span><span class="si">}</span><span class="s2"> -i lop-ttc-split.dts </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">out_dts_path</span><span class="si">}</span><span class="s2"> -- gen_domain_dts </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">log_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Generating Domain-specific DTS for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Domain specific DT generation for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> failed&quot;</span><span class="p">,</span>
+                        <span class="n">verbose_level</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;lopper -f --enhanced -O </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="si">}</span><span class="s2"> -i lop-ttc-split.dts </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">out_dts_path</span><span class="si">}</span><span class="s2"> -- gen_domain_dts </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">log_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Generating Domain-specific DTS for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Domain specific DT generation for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> failed&quot;</span><span class="p">,</span>
+                        <span class="n">verbose_level</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">out_dts_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdt</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_ip_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;microblaze&quot;</span><span class="p">,</span> <span class="s2">&quot;microblaze_riscv&quot;</span><span class="p">,</span> <span class="s2">&quot;asu&quot;</span><span class="p">,</span> <span class="s2">&quot;pmc_riscv&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_ip_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;microblaze_riscv&quot;</span><span class="p">,</span> <span class="s2">&quot;asu&quot;</span><span class="p">,</span> <span class="s2">&quot;pmc_riscv&quot;</span><span class="p">]</span> <span class="p">:</span>
+                <span class="n">lops_file</span> <span class="o">=</span> <span class="s2">&quot;lop-microblaze-riscv.dts&quot;</span>
+                <span class="n">processor</span> <span class="o">=</span> <span class="s2">&quot;riscv&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lops_file</span> <span class="o">=</span> <span class="s2">&quot;lop-microblaze.dts&quot;</span>
+                <span class="n">processor</span> <span class="o">=</span> <span class="s2">&quot;microblaze&quot;</span>
+
+            <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;lopper -f -O </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="si">}</span><span class="s2"> --enhanced -i </span><span class="si">{</span><span class="n">lops_file</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">out_dts_path</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">dump</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">cwd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span>
+                <span class="n">log_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Executing </span><span class="si">{</span><span class="n">lops_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lops_file</span><span class="si">}</span><span class="s2"> execution failed&quot;</span>
+            <span class="p">)</span>
+            <span class="n">cflags_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;cflags.yaml&quot;</span><span class="p">)</span>
+            <span class="n">avail_cflag_data</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fetch_yaml_data</span><span class="p">(</span><span class="n">cflags_file</span><span class="p">,</span> <span class="s2">&quot;cflags&quot;</span><span class="p">)</span>
+            <span class="n">cflags</span> <span class="o">=</span> <span class="n">avail_cflag_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cflags&quot;</span><span class="p">)</span>
+
+
+            <span class="n">utils</span><span class="o">.</span><span class="n">replace_line</span><span class="p">(</span>
+                <span class="n">toolchain_file_copy</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;set( CMAKE_HW_FLAGS &quot;&quot; )&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;set( CMAKE_HW_FLAGS &quot;</span><span class="si">{</span><span class="n">cflags</span><span class="si">}</span><span class="s1">&quot; )</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_ip_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;microblaze_riscv&quot;</span><span class="p">,</span> <span class="s2">&quot;asu&quot;</span><span class="p">]:</span>
+                <span class="n">bsp_linkflags</span> <span class="o">=</span> <span class="n">avail_cflag_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;linkflags&quot;</span><span class="p">)</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">replace_line</span><span class="p">(</span>
+                    <span class="n">toolchain_file_copy</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s1">&#39;set( CMAKE_BSP_HW_LINK_FLAGS &quot;&quot; )&#39;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s1">&#39;set( CMAKE_BSP_HW_LINK_FLAGS &quot;</span><span class="si">{</span><span class="n">bsp_linkflags</span><span class="si">}</span><span class="s1">&quot; )</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="n">relative_libpath</span> <span class="o">=</span> <span class="n">avail_cflag_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;libpath&quot;</span><span class="p">)</span>
+            <span class="n">vitis_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;XILINX_VITIS&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;nt&quot;</span><span class="p">:</span>
+                <span class="n">libpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">vitis_path</span><span class="p">,</span> <span class="s2">&quot;gnu&quot;</span><span class="p">,</span> <span class="n">processor</span><span class="p">,</span> <span class="s2">&quot;nt&quot;</span><span class="p">,</span> <span class="n">relative_libpath</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">libpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">vitis_path</span><span class="p">,</span> <span class="s2">&quot;gnu&quot;</span><span class="p">,</span> <span class="n">processor</span><span class="p">,</span> <span class="s2">&quot;lin&quot;</span><span class="p">,</span> <span class="n">relative_libpath</span><span class="p">)</span>
+
+            <span class="n">libpath</span> <span class="o">=</span> <span class="n">libpath</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+
+            <span class="k">assert</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_dir</span><span class="p">(</span><span class="n">libpath</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">processor</span><span class="si">}</span><span class="s2"> compiler library path </span><span class="si">{</span><span class="n">libpath</span><span class="si">}</span><span class="s2"> is not found.&quot;</span>
+
+            <span class="n">utils</span><span class="o">.</span><span class="n">replace_line</span><span class="p">(</span>
+                <span class="n">toolchain_file_copy</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;set( CMAKE_COMPILER_LIB_PATH &quot;&quot; )&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;set( CMAKE_COMPILER_LIB_PATH &quot;</span><span class="si">{</span><span class="n">libpath</span><span class="si">}</span><span class="s1">&quot; )</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">compiler_flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apps_cflags_update</span><span class="p">(</span>
+            <span class="n">toolchain_file_copy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">out_dts_path</span><span class="p">,</span> <span class="n">toolchain_file_copy</span><span class="p">,</span> <span class="n">specs_copy_file</span></div>
+
+<div class="viewcode-block" id="Domain.apps_cflags_update"><a class="viewcode-back" href="../create_bsp.html#create_bsp.Domain.apps_cflags_update">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">apps_cflags_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">toolchain_file</span><span class="p">,</span> <span class="n">app_name</span><span class="p">,</span> <span class="n">proc</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function acts as a helper for toolchain_intr_mapping. This adds</span>
+<span class="sd">        template application specific compiler entries in the cmake toolchain</span>
+<span class="sd">        file of the domain.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            | toolchain_file (str): The toolchain file that needs to be updated</span>
+<span class="sd">            | app_name (str): Specific app name that needs new entries</span>
+<span class="sd">            | proc (str): Proc specific data pertaining to the app.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            compiler_flags (str): returns the new compiler flags that were set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">compiler_flags</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">app_name</span><span class="p">:</span>
+            <span class="n">app_yaml_dict</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="n">app_name</span><span class="p">),</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">app_name</span><span class="si">}</span><span class="s2">.yaml&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">app_yaml_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;extra_compiler_flags&quot;</span><span class="p">):</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">replace_line</span><span class="p">(</span>
+                    <span class="n">toolchain_file</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s1">&#39;set( APPLICATION_SPECIFIC_FLAGS &quot;&quot;  CACHE STRING &quot;Extra Application specific Flags&quot;)&#39;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s1">&#39;set( APPLICATION_SPECIFIC_FLAGS &quot;</span><span class="si">{</span><span class="n">app_yaml_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;extra_compiler_flags&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="si">}</span><span class="s1">&quot;  CACHE STRING &quot;Extra Application specific Flags&quot;)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">app_name</span> <span class="o">==</span> <span class="s2">&quot;zynqmp_fsbl&quot;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_mode</span> <span class="o">==</span> <span class="s2">&quot;32-bit&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">app_name</span> <span class="o">==</span> <span class="s2">&quot;zynqmp_fsbl&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;a53&quot;</span> <span class="ow">in</span> <span class="n">proc</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_mode</span> <span class="o">==</span> <span class="s2">&quot;64-bit&quot;</span><span class="p">:</span>
+                        <span class="n">compiler_flags</span> <span class="o">=</span> <span class="s2">&quot;-Os -flto -ffat-lto-objects -DARMA53_64&quot;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">compiler_flags</span> <span class="o">=</span> <span class="s2">&quot;-Os -flto -ffat-lto-objects -DARMA53_32 -march=armv7-a -mfpu=vfpv3 -mfloat-abi=hard&quot;</span>
+                <span class="k">if</span> <span class="s2">&quot;r5&quot;</span> <span class="ow">in</span> <span class="n">proc</span><span class="p">:</span>
+                    <span class="n">compiler_flags</span> <span class="o">=</span> <span class="s2">&quot;-Os -flto -ffat-lto-objects -DARMR5&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">compiler_flags</span> <span class="o">=</span> <span class="s2">&quot;-march=armv7-a -DARMA53_32 -mfpu=vfpv3 -mfloat-abi=hard&quot;</span>
+
+            <span class="n">utils</span><span class="o">.</span><span class="n">add_newline</span><span class="p">(</span>
+                <span class="n">toolchain_file</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;set( CMAKE_C_FLAGS &quot;$</span><span class="se">{{</span><span class="s1">TOOLCHAIN_C_FLAGS</span><span class="se">}}</span><span class="s1"> $</span><span class="se">{{</span><span class="s1">TOOLCHAIN_DEP_FLAGS</span><span class="se">}}</span><span class="s1"> -specs=$</span><span class="se">{{</span><span class="s1">CMAKE_SPECS_FILE</span><span class="se">}}</span><span class="s1"> </span><span class="si">{</span><span class="n">compiler_flags</span><span class="si">}</span><span class="s1"> -I$</span><span class="se">{{</span><span class="s1">CMAKE_INCLUDE_PATH</span><span class="se">}}</span><span class="s1">&quot; CACHE STRING &quot;CFLAGS&quot; FORCE)&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">add_newline</span><span class="p">(</span>
+                <span class="n">toolchain_file</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;set( CMAKE_CXX_FLAGS &quot;$</span><span class="se">{{</span><span class="s1">TOOLCHAIN_CXX_FLAGS</span><span class="se">}}</span><span class="s1"> $</span><span class="se">{{</span><span class="s1">TOOLCHAIN_DEP_FLAGS</span><span class="se">}}</span><span class="s1"> -specs=$</span><span class="se">{{</span><span class="s1">CMAKE_SPECS_FILE</span><span class="se">}}</span><span class="s1"> </span><span class="si">{</span><span class="n">compiler_flags</span><span class="si">}</span><span class="s1"> -I$</span><span class="se">{{</span><span class="s1">CMAKE_INCLUDE_PATH</span><span class="se">}}</span><span class="s1">&quot; CACHE STRING &quot;CXX FLAGS&quot; FORCE)&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">add_newline</span><span class="p">(</span>
+                <span class="n">toolchain_file</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;set( CMAKE_ASM_FLAGS &quot;$</span><span class="se">{{</span><span class="s1">TOOLCHAIN_ASM_FLAGS</span><span class="se">}}</span><span class="s1"> $</span><span class="se">{{</span><span class="s1">TOOLCHAIN_DEP_FLAGS</span><span class="se">}}</span><span class="s1"> -specs=$</span><span class="se">{{</span><span class="s1">CMAKE_SPECS_FILE</span><span class="se">}}</span><span class="s1"> </span><span class="si">{</span><span class="n">compiler_flags</span><span class="si">}</span><span class="s1"> -I$</span><span class="se">{{</span><span class="s1">CMAKE_INCLUDE_PATH</span><span class="se">}}</span><span class="s1">&quot; CACHE STRING &quot;ASM FLAGS&quot; FORCE)&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">compiler_flags</span></div></div>
+
+<div class="viewcode-block" id="lop_create_target"><a class="viewcode-back" href="../create_bsp.html#create_bsp.lop_create_target">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">lop_create_target</span><span class="p">(</span><span class="n">lop_cmds</span><span class="p">):</span>
+    <span class="n">lop_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">/dts-v1/;</span>
+<span class="s1">/ </span><span class="se">{{</span>
+<span class="s1">        compatible = &quot;system-device-tree-v1,lop&quot;;</span>
+<span class="s1">        lops </span><span class="se">{{</span>
+<span class="s1">                lop_0 </span><span class="se">{{</span>
+<span class="s1">                        compatible = &quot;system-device-tree-v1,lop,load&quot;;</span>
+<span class="s1">                        load = &quot;assists/baremetalconfig_xlnx.py&quot;;</span>
+<span class="s1">                </span><span class="se">}}</span><span class="s1">;</span>
+<span class="s1">                lop_1 </span><span class="se">{{</span>
+<span class="s1">                        compatible = &quot;system-device-tree-v1,lop,load&quot;;</span>
+<span class="s1">                        load = &quot;assists/baremetal_bspconfig_xlnx&quot;;</span>
+<span class="s1">                </span><span class="se">}}</span><span class="s1">;</span>
+<span class="s1">                lop_2 </span><span class="se">{{</span>
+<span class="s1">                        compatible = &quot;system-device-tree-v1,lop,load&quot;;</span>
+<span class="s1">                        load = &quot;assists/bmcmake_metadata_xlnx.py&quot;;</span>
+<span class="s1">                </span><span class="se">}}</span><span class="s1">;</span>
+<span class="s1">                lop_3 </span><span class="se">{{</span>
+<span class="s1">                        compatible = &quot;system-device-tree-v1,lop,load&quot;;</span>
+<span class="s1">                        load = &quot;assists/baremetal_xparameters_xlnx.py&quot;;</span>
+<span class="s1">                </span><span class="se">}}</span><span class="s1">;</span>
+<span class="s1">    &#39;&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span><span class="n">cmd</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lop_cmds</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+        <span class="n">lop_file</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">                lop_</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s1"> </span><span class="se">{{</span>
+<span class="s1">                    compatible = &quot;system-device-tree-v1,lop,assist-v1&quot;;</span>
+<span class="s1">                    node = &quot;/&quot;;</span>
+<span class="s1">                    outdir = &quot;</span><span class="si">{</span><span class="n">cmd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&quot;;</span>
+<span class="s1">                    id = &quot;</span><span class="si">{</span><span class="n">cmd</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&quot;;</span>
+<span class="s1">                 options = &quot;</span><span class="si">{</span><span class="n">cmd</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s1">&quot;;</span>
+<span class="s1">                </span><span class="se">}}</span><span class="s1">;</span>
+<span class="s1">        &#39;&#39;&#39;</span>
+    <span class="n">lop_file</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        </span><span class="se">}}</span><span class="s1">;</span>
+<span class="s1">    </span><span class="se">}}</span><span class="s1">;</span>
+<span class="s1">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">lop_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span></div>
+
+<span class="nd">@log_time</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_domain</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function that uses the above Domain class to create the baremetal domain.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        args (dict): Takes all the user inputs in a dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Initialize the Domain class</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">Domain</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s2">&quot;Starting domain creation&quot;</span> <span class="p">)</span>
+
+    <span class="c1"># Create the bsp directory structure.</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">build_dir_struct</span><span class="p">()</span>
+
+    <span class="c1"># Create the Domain specific sdt and the toolchain file.</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">sdt</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">toolchain_file</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">specs_file</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">toolchain_intr_mapping</span><span class="p">()</span>
+
+    <span class="c1"># Common cmake variables to support cmake build infra.</span>
+    <span class="n">cmake_paths_append</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; -DCMAKE_LIBRARY_PATH=</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">lib_folder</span><span class="si">}</span><span class="s2"> </span><span class="se">\</span>
+<span class="s2">-DCMAKE_INCLUDE_PATH=</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">include_folder</span><span class="si">}</span><span class="s2"> </span><span class="se">\</span>
+<span class="s2">-DCMAKE_MODULE_PATH=</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="si">}</span><span class="s2"> </span><span class="se">\</span>
+<span class="s2">-DCMAKE_TOOLCHAIN_FILE=</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">toolchain_file</span><span class="si">}</span><span class="s2"> </span><span class="se">\</span>
+<span class="s2">-DCMAKE_VERBOSE_MAKEFILE=ON&quot;</span>
+
+    <span class="k">if</span> <span class="s2">&quot;gcc&quot;</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">compiler</span><span class="p">:</span>
+        <span class="n">cmake_paths_append</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; -DCMAKE_SPECS_FILE=</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">specs_file</span><span class="si">}</span><span class="s2"> &quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cmake_paths_append</span> <span class="o">+=</span> <span class="s2">&quot; -Wno-dev &quot;</span>
+
+    <span class="c1"># Copy the standalone bsp src file.</span>
+    <span class="n">os_dir_path</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="s2">&quot;standalone&quot;</span><span class="p">)</span>
+    <span class="n">os_srcdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os_dir_path</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">)</span>
+    <span class="n">bspsrc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;standalone&quot;</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">)</span>
+    <span class="n">bspcomsrc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;standalone&quot;</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="s2">&quot;common&quot;</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">copy_directory</span><span class="p">(</span><span class="n">os_srcdir</span><span class="p">,</span> <span class="n">bspsrc</span><span class="p">)</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">os_info</span><span class="p">[</span><span class="s1">&#39;standalone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="n">os_dir_path</span><span class="p">}</span>
+
+    <span class="c1"># Create lops file</span>
+    <span class="n">config_lops_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;lop-config.dts&quot;</span><span class="p">)</span>
+    <span class="n">lop_cmds</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lop_cmds</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">bspsrc</span><span class="p">,</span> <span class="s2">&quot;module,baremetal_bspconfig_xlnx&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">os_srcdir</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">app</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">])</span>
+    <span class="n">lop_cmds</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">bspcomsrc</span><span class="p">,</span> <span class="s2">&quot;module,bmcmake_metadata_xlnx&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">os_srcdir</span><span class="si">}</span><span class="s2"> hwcmake_metadata </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">repo_yaml_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Copy cmake file that contains cmake utility APIs to a common location.</span>
+    <span class="n">find_common_cmake_path</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_high_precedence_path</span><span class="p">(</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">repo_paths_list</span><span class="p">,</span> <span class="s2">&quot;Findcommon.cmake&quot;</span><span class="p">,</span> <span class="s2">&quot;cmake&quot;</span><span class="p">,</span> <span class="s2">&quot;Findcommon.cmake&quot;</span>
+        <span class="p">)</span>
+    <span class="n">find_common_domain_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;Findcommon.cmake&quot;</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span>
+        <span class="n">find_common_cmake_path</span><span class="p">,</span>
+        <span class="n">find_common_domain_path</span><span class="p">,</span>
+        <span class="n">silent_discard</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Below replace command is meant only for maintaining the backward compatibility</span>
+    <span class="c1"># with 2023.2</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">replace_line</span><span class="p">(</span>
+        <span class="n">find_common_domain_path</span><span class="p">,</span>
+        <span class="s1">&#39;option(NON_YOCTO &quot;Non Yocto embeddedsw FLOW&quot; OFF)&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;option(NON_YOCTO &quot;Non Yocto embeddedsw FLOW&quot; ON)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate metadata for driver compilation. Metadata includes driver</span>
+<span class="sd">    list available in sdt and a cmake file that enables the generation of</span>
+<span class="sd">    _g.c files for available drivers in parallel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;lopper -O </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="si">}</span><span class="s2"> -f </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2"> -- baremetaldrvlist_xlnx </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">repo_yaml_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Generating driver list&quot;</span><span class="p">,</span>
+        <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Could not generate the Driver list, baremetaldrvlist_xlnx failed&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Read the driver list available in libsrc folder</span>
+    <span class="n">drv_list_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;distro.conf&quot;</span><span class="p">)</span>
+    <span class="n">cmake_drv_path_list</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">cmake_drv_name_list</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">drv_list_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fd</span><span class="p">:</span>
+        <span class="n">drv_names</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;DISTRO_FEATURES = &quot;(.*)&quot;&#39;</span><span class="p">,</span> <span class="n">fd</span><span class="o">.</span><span class="n">readline</span><span class="p">())</span>
+            <span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">drv_list</span> <span class="o">=</span> <span class="n">drv_names</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+    <span class="n">drv_lib_dep</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">drv</span> <span class="ow">in</span> <span class="n">drv_list</span><span class="p">:</span>
+        <span class="n">drv_path</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="n">drv</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">sdt_folder</span><span class="p">)</span>
+        <span class="n">drv_srcdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">drv_path</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">)</span>
+        <span class="n">drvsrc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">drv</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">copy_directory</span><span class="p">(</span><span class="n">drv_srcdir</span><span class="p">,</span> <span class="n">drvsrc</span><span class="p">)</span>
+        <span class="n">yaml_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">drv_path</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">drv</span><span class="si">}</span><span class="s2">.yaml&quot;</span><span class="p">)</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">schema</span> <span class="ow">and</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;depends_libs&quot;</span><span class="p">,</span> <span class="p">{}):</span>
+           <span class="n">drv_lib_dep</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s2">&quot;depends_libs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">drv_path</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Couldnt find the src directory for </span><span class="si">{</span><span class="n">drv</span><span class="si">}</span><span class="s2">. </span><span class="si">{</span><span class="n">drv_path</span><span class="si">}</span><span class="s2"> doesnt exist.&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">cmake_drv_path_list</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">drv_path</span><span class="si">}</span><span class="s2">;&quot;</span>
+        <span class="n">lop_cmds</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">drvsrc</span><span class="p">,</span> <span class="s2">&quot;module,baremetalconfig_xlnx&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">drv_srcdir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">])</span>
+
+    <span class="n">ip_drv_map_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;ip_drv_map.yaml&quot;</span><span class="p">)</span>
+    <span class="n">ip_drv_map</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">(</span><span class="n">ip_drv_map_file</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ip</span><span class="p">,</span><span class="n">data</span> <span class="ow">in</span> <span class="n">ip_drv_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">driver</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">driver</span> <span class="o">!=</span> <span class="s2">&quot;None&quot;</span><span class="p">:</span>
+            <span class="n">drv_path</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">sdt_folder</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">drv_path</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Couldnt find the src directory for </span><span class="si">{</span><span class="n">drv</span><span class="si">}</span><span class="s2">. </span><span class="si">{</span><span class="n">drv_path</span><span class="si">}</span><span class="s2"> doesnt exist.&quot;</span><span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">drv_info</span><span class="p">[</span><span class="n">ip</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;driver&#39;</span><span class="p">:</span> <span class="n">driver</span><span class="p">,</span>
+                                <span class="s1">&#39;ip_name&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                <span class="s1">&#39;path&#39;</span> <span class="p">:</span> <span class="n">drv_path</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">drv_info</span><span class="p">[</span><span class="n">ip</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span>
+
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a dictionary that will contain the current status of the domain.</span>
+<span class="sd">    This data will later be used during bsp configuartion, bsp build and</span>
+<span class="sd">    app creation stages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;sdt&quot;</span><span class="p">:</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_rel_path</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">sdt</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">),</span>
+        <span class="s2">&quot;family&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">family</span><span class="p">,</span>
+        <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span>
+        <span class="s2">&quot;config&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;os&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">os</span><span class="p">,</span>
+        <span class="s2">&quot;os_info&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">os_info</span><span class="p">,</span>
+        <span class="s2">&quot;os_config&quot;</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s2">&quot;toolchain_file&quot;</span><span class="p">:</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_rel_path</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">toolchain_file</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">),</span>
+        <span class="s2">&quot;specs_file&quot;</span><span class="p">:</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_rel_path</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">specs_file</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">),</span>
+        <span class="s2">&quot;proc&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="p">,</span>
+        <span class="s2">&quot;proc_config&quot;</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s2">&quot;template&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
+        <span class="s2">&quot;compiler&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">compiler</span><span class="p">,</span>
+        <span class="s2">&quot;compiler_flags&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">compiler_flags</span><span class="p">,</span>
+        <span class="s2">&quot;include_folder&quot;</span><span class="p">:</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_rel_path</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">include_folder</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">),</span>
+        <span class="s2">&quot;lib_folder&quot;</span><span class="p">:</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_rel_path</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">lib_folder</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">),</span>
+        <span class="s2">&quot;libsrc_folder&quot;</span><span class="p">:</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_rel_path</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">),</span>
+        <span class="s2">&quot;drv_info&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">drv_info</span><span class="p">,</span>
+        <span class="s2">&quot;lib_info&quot;</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s2">&quot;lib_config&quot;</span><span class="p">:</span> <span class="p">{}</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Write the domain specific data as a configuration file in yaml format.</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">write_yaml</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+    <span class="c1"># If domain has to be created for a certain template, few libraries need</span>
+    <span class="c1"># to be added in the bsp.</span>
+    <span class="n">lib_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;xiltimer&quot;</span><span class="p">]</span>
+    <span class="n">cmake_cmd_append</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">lib_obj</span> <span class="o">=</span> <span class="n">Library</span><span class="p">(</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">os</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">sdt</span><span class="p">,</span> <span class="n">cmake_paths_append</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">repo_yaml_path</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">app</span><span class="p">:</span>
+        <span class="c1"># If template app is passed, read the app&#39;s yaml file and add</span>
+        <span class="c1"># lib accordingly.</span>
+        <span class="n">lib_list</span><span class="p">,</span> <span class="n">cmake_cmd_append</span> <span class="o">=</span> <span class="n">lib_obj</span><span class="o">.</span><span class="n">add_lib_for_apps</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">app</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># If no app is passed and bsp is created add xiltimer by default.</span>
+        <span class="n">lib_obj</span><span class="o">.</span><span class="n">copy_lib_src</span><span class="p">(</span><span class="s2">&quot;xiltimer&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">drv_lib_dep</span><span class="p">:</span>
+        <span class="c1">#Remove duplicate entries</span>
+        <span class="n">drv_lib_dep</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">drv_lib_dep</span><span class="p">))</span>
+        <span class="n">lib_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">drv_lib_dep</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">lib</span> <span class="ow">in</span> <span class="n">drv_lib_dep</span><span class="p">:</span>
+            <span class="n">lib_obj</span><span class="o">.</span><span class="n">copy_lib_src</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">os</span> <span class="o">==</span> <span class="s2">&quot;freertos&quot;</span><span class="p">:</span>
+        <span class="c1"># Copy the freertos source code to libsrc folder</span>
+        <span class="n">os_dir_path</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="s2">&quot;freertos10_xilinx&quot;</span><span class="p">)</span>
+        <span class="n">os_srcdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os_dir_path</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">)</span>
+        <span class="n">bspsrc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;freertos10_xilinx/src&quot;</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">copy_directory</span><span class="p">(</span><span class="n">os_srcdir</span><span class="p">,</span> <span class="n">bspsrc</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">os_info</span><span class="p">[</span><span class="s1">&#39;freertos10_xilinx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="n">os_dir_path</span><span class="p">}</span>
+        <span class="n">lib_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;freertos10_xilinx&quot;</span><span class="p">)</span>
+
+
+    <span class="k">if</span> <span class="n">lib_list</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">lib</span> <span class="ow">in</span> <span class="n">lib_list</span><span class="p">:</span>
+            <span class="n">lib_dir_path</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
+            <span class="n">srcdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lib_dir_path</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">)</span>
+            <span class="n">dstdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lib</span><span class="si">}</span><span class="s2">/src&quot;</span><span class="p">)</span>
+            <span class="n">outfile</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lib</span><span class="si">}</span><span class="s2">Example.cmake&quot;</span>
+            <span class="n">lop_cmds</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">dstdir</span><span class="p">,</span> <span class="s2">&quot;module,bmcmake_metadata_xlnx&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">srcdir</span><span class="si">}</span><span class="s2"> hwcmake_metadata </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">repo_yaml_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;xilpm&quot;</span> <span class="ow">in</span> <span class="n">lib</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;ZynqMP&quot;</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">family</span><span class="p">):</span>
+                <span class="n">dstdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">lib</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="s2">&quot;zynqmp&quot;</span><span class="p">,</span> <span class="s2">&quot;client&quot;</span><span class="p">,</span> <span class="s2">&quot;common&quot;</span><span class="p">)</span>
+                <span class="n">ori_sdt_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">sdt_folder</span><span class="p">,</span> <span class="s2">&quot;sdt.dts&quot;</span><span class="p">)</span>
+                <span class="c1">#TODO: Update bsp.yaml before running the below command so that,</span>
+                <span class="c1">#      the default properties of lib get updated successfully.</span>
+                <span class="n">lopper_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;lopper -O </span><span class="si">{</span><span class="n">dstdir</span><span class="si">}</span><span class="s2"> -f </span><span class="si">{</span><span class="n">ori_sdt_path</span><span class="si">}</span><span class="s2"> --  generate_config_object pm_cfg_obj.c </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                    <span class="n">lopper_cmd</span><span class="p">,</span> <span class="n">cwd</span> <span class="o">=</span> <span class="n">dstdir</span><span class="p">,</span>
+                    <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;generate_config_object for PM use case&quot;</span><span class="p">,</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to generate the config object for PM use cases&quot;</span>
+                <span class="p">)</span>
+
+    <span class="n">build_metadata</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;build_configs&quot;</span><span class="p">,</span> <span class="s2">&quot;gen_bsp&quot;</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">build_metadata</span><span class="p">)</span>
+
+    <span class="n">lop_cmds</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">obj</span><span class="o">.</span><span class="n">include_folder</span><span class="p">,</span> <span class="s2">&quot;module,baremetal_xparameters_xlnx&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">repo_yaml_path</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">app</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">])</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">write_into_file</span><span class="p">(</span><span class="n">config_lops_file</span><span class="p">,</span> <span class="n">lop_create_target</span><span class="p">(</span><span class="n">lop_cmds</span><span class="p">))</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;lopper -O </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="si">}</span><span class="s2"> -i </span><span class="si">{</span><span class="n">config_lops_file</span><span class="si">}</span><span class="s2"> -f </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Generating required metadata from domain specific DT&quot;</span><span class="p">,</span>
+        <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Overall metadata generation failed&quot;</span><span class="p">,</span>
+        <span class="n">verbose_level</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Copy the common cmake meta-data file to domain directory so that other modules can consume it</span>
+    <span class="n">cmake_metadata</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;standalone&quot;</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="s2">&quot;common&quot;</span><span class="p">,</span> <span class="s2">&quot;StandaloneExample.cmake&quot;</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">cmake_metadata</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="si">}</span><span class="s2">/Findcommonmeta.cmake&quot;</span><span class="p">)</span>
+    <span class="c1"># Copy the actual drivers cmake file in the libsrc folder.</span>
+    <span class="c1"># This is to compile all the available driver sources.</span>
+    <span class="n">libxil_cmake</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_high_precedence_path</span><span class="p">(</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">repo_paths_list</span><span class="p">,</span> <span class="s2">&quot;Driver compilation CMake File&quot;</span><span class="p">,</span> <span class="s2">&quot;XilinxProcessorIPLib&quot;</span><span class="p">,</span> <span class="s2">&quot;drivers&quot;</span><span class="p">,</span> <span class="s2">&quot;CMakeLists.txt&quot;</span>
+    <span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">libxil_cmake</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="si">}</span><span class="s2">/&quot;</span><span class="p">)</span>
+
+    <span class="n">bsp_libsrc_cmake_subdirs</span> <span class="o">=</span> <span class="s2">&quot;libsrc standalone &quot;</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lib_list</span><span class="p">)</span>
+
+    <span class="c1"># Create new CMakeLists.txt</span>
+    <span class="n">cmake_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;CMakeLists.txt&quot;</span><span class="p">)</span>
+    <span class="n">cmake_file_cmds</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">cmake_minimum_required(VERSION 3.15)</span>
+<span class="s1">project(bsp)</span>
+<span class="s1">find_package(common)</span>
+<span class="s1">find_package(commonmeta)</span>
+<span class="s1">if(CMAKE_EXPORT_COMPILE_COMMANDS)</span>
+<span class="s1">    set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES $</span><span class="se">{{</span><span class="s1">CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES</span><span class="se">}}</span><span class="s1">)</span>
+<span class="s1">    set(CMAKE_C_STANDARD_INCLUDE_DIRECTORIES $</span><span class="se">{{</span><span class="s1">CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES</span><span class="se">}}</span><span class="s1">)</span>
+<span class="s1">endif()</span>
+
+<span class="s1">ADD_DEFINITIONS(-c $</span><span class="se">{{</span><span class="s1">proc_extra_compiler_flags</span><span class="se">}}</span><span class="s1">)</span>
+<span class="s1">include_directories($</span><span class="se">{{</span><span class="s1">CMAKE_BINARY_DIR</span><span class="se">}}</span><span class="s1">/include)</span>
+<span class="s1">include_directories($</span><span class="se">{{</span><span class="s1">CMAKE_INCLUDE_PATH</span><span class="se">}}</span><span class="s1">)</span>
+
+<span class="s1">if (EXISTS $</span><span class="se">{{</span><span class="s1">metal_BINARY_DIR</span><span class="se">}}</span><span class="s1">)</span>
+<span class="s1">include_directories($</span><span class="se">{{</span><span class="s1">metal_BINARY_DIR</span><span class="se">}}</span><span class="s1">/lib/include)</span>
+<span class="s1">endif()</span>
+<span class="s1">set (BSP_LIBSRC_SUBDIRS </span><span class="si">{</span><span class="n">bsp_libsrc_cmake_subdirs</span><span class="si">}</span><span class="s1">)</span>
+
+<span class="s1">if (SUBDIR_LIST STREQUAL &quot;ALL&quot;)</span>
+<span class="s1">    set (SUBDIR_LIST $</span><span class="se">{{</span><span class="s1">BSP_LIBSRC_SUBDIRS</span><span class="se">}}</span><span class="s1">)</span>
+<span class="s1">endif()</span>
+
+<span class="s1">foreach(entry $</span><span class="se">{{</span><span class="s1">SUBDIR_LIST</span><span class="se">}}</span><span class="s1">)</span>
+<span class="s1">    if(entry STREQUAL &quot;libsrc&quot;)</span>
+<span class="s1">        set (path &quot;$</span><span class="se">{{</span><span class="s1">CMAKE_LIBRARY_PATH</span><span class="se">}}</span><span class="s1">/../libsrc&quot;)</span>
+<span class="s1">    else()</span>
+<span class="s1">        set (path &quot;$</span><span class="se">{{</span><span class="s1">CMAKE_LIBRARY_PATH</span><span class="se">}}</span><span class="s1">/../libsrc/$</span><span class="se">{{</span><span class="s1">entry</span><span class="se">}}</span><span class="s1">/src&quot;)</span>
+<span class="s1">    endif()</span>
+<span class="s1">    if(EXISTS $</span><span class="se">{{</span><span class="s1">path</span><span class="se">}}</span><span class="s1">)</span>
+<span class="s1">        add_subdirectory($</span><span class="se">{{</span><span class="s1">path</span><span class="se">}}</span><span class="s1">)</span>
+<span class="s1">    endif()</span>
+<span class="s1">endforeach()</span>
+<span class="s1">cmake_language(DEFER DIRECTORY $</span><span class="se">{{</span><span class="s1">CMAKE_SOURCE_DIR</span><span class="se">}}</span><span class="s1"> CALL _my_hook_end_of_configure())</span>
+<span class="s1">function(_my_hook_end_of_configure)</span>
+<span class="s1">    set(SUBDIR_LIST &quot;ALL&quot; CACHE STRING &quot;sub dir list&quot; FORCE)</span>
+<span class="s1">endfunction(_my_hook_end_of_configure)</span>
+<span class="s1">    &#39;&#39;&#39;</span>
+
+    <span class="n">utils</span><span class="o">.</span><span class="n">write_into_file</span><span class="p">(</span><span class="n">cmake_file</span><span class="p">,</span> <span class="n">cmake_file_cmds</span><span class="p">)</span>
+
+    <span class="n">build_metadata</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;build_configs&quot;</span><span class="p">,</span> <span class="s2">&quot;gen_bsp&quot;</span><span class="p">)</span>
+    <span class="n">lib_list</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;standalone&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">app</span><span class="p">:</span>
+        <span class="n">lib_obj</span><span class="o">.</span><span class="n">config_lib</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">lib_list</span><span class="p">,</span> <span class="n">cmake_cmd_append</span><span class="p">,</span> <span class="n">is_app</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># If no app is passed and bsp is created xiltimer got added default</span>
+        <span class="c1"># Update config entries for the same.</span>
+        <span class="n">lib_obj</span><span class="o">.</span><span class="n">config_lib</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">lib_list</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">is_app</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Run cmake configuration with all the default cache entries</span>
+    <span class="n">cmake_paths_append</span> <span class="o">=</span> <span class="n">cmake_paths_append</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+    <span class="n">build_metadata</span> <span class="o">=</span> <span class="n">build_metadata</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">os</span> <span class="o">==</span> <span class="s2">&quot;freertos&quot;</span><span class="p">:</span>
+        <span class="n">os_config</span> <span class="o">=</span> <span class="n">lib_obj</span><span class="o">.</span><span class="n">get_default_lib_params</span><span class="p">(</span><span class="n">build_metadata</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;freertos&quot;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">os_config</span> <span class="o">=</span> <span class="n">lib_obj</span><span class="o">.</span><span class="n">get_default_lib_params</span><span class="p">(</span><span class="n">build_metadata</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;standalone&quot;</span><span class="p">])</span>
+    <span class="n">proc_config</span> <span class="o">=</span> <span class="n">lib_obj</span><span class="o">.</span><span class="n">get_default_lib_params</span><span class="p">(</span><span class="n">build_metadata</span><span class="p">,[</span><span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">lib_obj</span><span class="o">.</span><span class="n">os_config</span><span class="p">:</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="n">lib_obj</span><span class="o">.</span><span class="n">os_config</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">props</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">props</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">os_config</span><span class="p">[</span><span class="n">obj</span><span class="o">.</span><span class="n">os</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{}):</span>
+                    <span class="n">os_config</span><span class="p">[</span><span class="n">obj</span><span class="o">.</span><span class="n">os</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">if</span> <span class="s2">&quot;microblaze&quot;</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">proc_ip_name</span><span class="p">:</span>
+        <span class="n">cmake_config</span> <span class="o">=</span> <span class="n">lib_obj</span><span class="o">.</span><span class="n">get_default_lib_params</span><span class="p">(</span><span class="n">build_metadata</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;cmake&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">cmake_config</span><span class="p">[</span><span class="s1">&#39;cmake&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CMAKE_MACHINE&#39;</span><span class="p">,</span> <span class="p">{}):</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">family</span> <span class="o">=</span> <span class="n">cmake_config</span><span class="p">[</span><span class="s1">&#39;cmake&#39;</span><span class="p">][</span><span class="s1">&#39;CMAKE_MACHINE&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;family&quot;</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">family</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;a53&quot;</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">proc</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="n">proc_mode</span> <span class="o">==</span> <span class="s2">&quot;32-bit&quot;</span><span class="p">:</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">proc_mode</span><span class="p">)</span>
+
+    <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;os_config&quot;</span><span class="p">,</span> <span class="n">os_config</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;proc_config&quot;</span><span class="p">,</span> <span class="n">proc_config</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;os_info&quot;</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">os_info</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;lib_info&quot;</span><span class="p">,</span> <span class="n">lib_obj</span><span class="o">.</span><span class="n">lib_info</span><span class="p">)</span>
+
+    <span class="c1"># Remove the metadata files that are no longer needed.</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">config_lops_file</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">drv_list_file</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">ip_drv_map_file</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;libxil.conf&quot;</span><span class="p">))</span>
+
+    <span class="n">utils</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;*.dtb&quot;</span><span class="p">),</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="p">,</span> <span class="s2">&quot;*.pp&quot;</span><span class="p">),</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    compile_commands.json file needs to be kept inside libsrc directory.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">build_metadata</span><span class="p">,</span> <span class="s2">&quot;compile_commands.json&quot;</span><span class="p">),</span> <span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">)</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    There are few GCC flags (e.g. -fno-tree-loop-distribute-patterns) that</span>
+<span class="sd">    clang server doesnt recognise for Code Intellisense. To get over this</span>
+<span class="sd">    &quot;Unknown Argument&quot; Error of clang, a .clangd file with below content is</span>
+<span class="sd">    to be kept in parallel to compile_commands.json file.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="s2">&quot;gcc&quot;</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">compiler</span><span class="p">:</span>
+        <span class="n">cmd_to_add</span> <span class="o">=</span> <span class="s2">&quot;Add: [-Wno-unknown-warning-option, -U__linux__, -U__clang__]&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cmd_to_add</span> <span class="o">=</span> <span class="s2">&quot;Add: [-Wno-unknown-warning-option, -U__linux__]&quot;</span>
+    <span class="n">clangd_ignore_content</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">CompileFlags:</span>
+<span class="s1">    </span><span class="si">{</span><span class="n">cmd_to_add</span><span class="si">}</span>
+<span class="s1">    Remove: [-m*, -f*]</span>
+<span class="s1">&#39;&#39;&#39;</span>
+    <span class="n">clangd_ignore_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;.clangd&quot;</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">write_into_file</span><span class="p">(</span><span class="n">clangd_ignore_file</span><span class="p">,</span> <span class="n">clangd_ignore_content</span><span class="p">)</span>
+
+    <span class="c1"># Success prints if everything went well till this point</span>
+    <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_file</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully created Domain at </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../create_bsp.html#create_bsp.main">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">arguments</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Create bsp for the given sdt, os, processor and template app&quot;</span><span class="p">,</span>
+        <span class="n">usage</span><span class="o">=</span><span class="s1">&#39;use &quot;empyro create_bsp --help&quot; for more information&#39;</span><span class="p">,</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">RawTextHelpFormatter</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">required_argument</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Required arguments&quot;</span><span class="p">)</span>
+    <span class="n">required_argument</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-p&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--proc&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify the processor name&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">required_argument</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-s&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--sdt&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify the System device-tree path (till system-top.dts file)&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-w&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--ws_dir&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Workspace directory where domain will be created (Default: Current Work Directory)&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-o&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--os&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;standalone&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify OS (Default: standalone)&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;standalone&quot;</span><span class="p">,</span> <span class="s2">&quot;freertos&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-t&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--template&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="sd">        Specify template app name. Available names are:</span>
+<span class="sd">            - empty_application</span>
+<span class="sd">            - hello_world</span>
+<span class="sd">            - memory_tests</span>
+<span class="sd">            - peripheral_tests</span>
+<span class="sd">            - zynqmp_fsbl</span>
+<span class="sd">            - zynqmp_pmufw</span>
+<span class="sd">            - lwip_echo_server</span>
+<span class="sd">            - freertos_hello_world</span>
+<span class="sd">            - versal_plm</span>
+<span class="sd">            - versal_psmfw</span>
+<span class="sd">            - freertos_lwip_echo_server</span>
+<span class="sd">            - freertos_lwip_tcp_perf_client</span>
+<span class="sd">            - freertos_lwip_tcp_perf_server</span>
+<span class="sd">            - freertos_lwip_udp_perf_client</span>
+<span class="sd">            - freertos_lwip_udp_perf_server</span>
+<span class="sd">            - lwip_tcp_perf_client</span>
+<span class="sd">            - lwip_tcp_perf_server</span>
+<span class="sd">            - lwip_udp_perf_client</span>
+<span class="sd">            - lwip_udp_perf_server</span>
+<span class="sd">            - dhrystone</span>
+<span class="sd">            - zynqmp_dram_test</span>
+<span class="sd">            - spartanup_plm</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-r&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--repo_info&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify the .repo.yaml absolute path to use the set repo info&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;.repo.yaml&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-m&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--mode&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;64-bit&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify the processor mode (Default: 64-bit)&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;32-bit&quot;</span><span class="p">,</span> <span class="s2">&quot;64-bit&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-v&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--verbose&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;count&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Increase output verbosity&#39;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-c&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--compiler&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;gcc&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify the compiler (Default: gcc)&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;gcc&quot;</span><span class="p">,</span> <span class="s2">&quot;armclang&quot;</span><span class="p">,</span> <span class="s2">&quot;armcc&quot;</span><span class="p">,</span> <span class="s2">&quot;iar&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">arguments</span><span class="p">))</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">setup_log</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;verbose&quot;</span><span class="p">])</span>
+    <span class="n">create_domain</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, PREETHI C.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

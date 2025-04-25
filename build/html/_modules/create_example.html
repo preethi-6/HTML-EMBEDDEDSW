@@ -1,0 +1,337 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>create_example &mdash; EMBEDDEDSW DOCUMENATION 2025.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=e5803c29"></script>
+      <script src="../_static/doctools.js?v=888ff710"></script>
+      <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EMBEDDEDSW DOCUMENATION
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">my_files</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EMBEDDEDSW DOCUMENATION</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">create_example</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for create_example</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.</span>
+<span class="c1"># SPDX-License-Identifier: MIT</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module creates the driver or library example using the domain information</span>
+<span class="sd">provided to it. It generates the directory structure and the metadata</span>
+<span class="sd">required to build a particular driver or library example.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">fileinput</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">textwrap</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">utils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">build_bsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">BSP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">repo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Repo</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">validate_bsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Validation</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="App"><a class="viewcode-back" href="../create_example.html#create_example.App">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">App</span><span class="p">(</span><span class="n">BSP</span><span class="p">,</span> <span class="n">Repo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class helps in creating a driver or library application.</span>
+<span class="sd">    It contains attributes and functions that take domain path,</span>
+<span class="sd">    and template name as an input, create the directory structure</span>
+<span class="sd">    and the metadata(if needed) for the app.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">BSP</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+        <span class="n">Repo</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">repo_yaml_path</span><span class="o">=</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;repo_info&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_build_dir_struct</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app_name</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repo_paths_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">repo_schema</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_dir_struct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates the directory structure for Apps.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app_dir</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_abs_path</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;ws_dir&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;src_dir&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app_src_dir</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_abs_path</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;src_dir&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app_src_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app_dir</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">)</span>
+
+        <span class="n">utils</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app_src_dir</span><span class="p">)</span>
+        <span class="c1"># App directory needs to have its own yaml configuration</span>
+        <span class="c1"># (for compiler flags, linker flags etc.)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app_config_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app_src_dir</span><span class="p">,</span> <span class="s2">&quot;app.yaml&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="create_example"><a class="viewcode-back" href="../create_example.html#create_example.create_example">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">create_example</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function that uses the above App class to create the template application.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        args (dict): Takes all the user inputs in a dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">App</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating example </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">app_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Copy the application src directory from embeddedsw to app src folder.</span>
+    <span class="n">domain_data</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fetch_yaml_data</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">)</span>
+    <span class="c1"># Check whether it is library or driver</span>
+    <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;drv_info&#39;</span><span class="p">]:</span>
+        <span class="n">comp_path</span> <span class="o">=</span> <span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;drv_info&#39;</span><span class="p">][</span><span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">comp_path</span> <span class="o">=</span> <span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;lib_info&#39;</span><span class="p">][</span><span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
+    <span class="n">esw_app_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">comp_path</span><span class="p">,</span> <span class="s2">&quot;examples&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Get the dependency list</span>
+    <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;drv_info&#39;</span><span class="p">]:</span>
+        <span class="n">dep_list</span> <span class="o">=</span> <span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;drv_info&#39;</span><span class="p">][</span><span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;examples&#39;</span><span class="p">][</span><span class="n">obj</span><span class="o">.</span><span class="n">app_name</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dep_list</span> <span class="o">=</span> <span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;lib_info&#39;</span><span class="p">][</span><span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;examples&#39;</span><span class="p">][</span><span class="n">obj</span><span class="o">.</span><span class="n">app_name</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">dep_list</span><span class="p">:</span>
+        <span class="c1"># copy the files</span>
+        <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="n">dep_list</span><span class="p">:</span>
+            <span class="n">app_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">esw_app_dir</span><span class="p">,</span> <span class="n">dep</span><span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">app_file</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="p">)</span>
+
+    <span class="n">app_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">esw_app_dir</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">app_name</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">app_file</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="p">)</span>
+
+    <span class="n">esw_app_dir</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="s2">&quot;empty_application&quot;</span><span class="p">)</span>
+    <span class="n">srcdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">esw_app_dir</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">copy_directory</span><span class="p">(</span><span class="n">srcdir</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="p">)</span>
+
+    <span class="n">src_cmake</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="p">,</span> <span class="s2">&quot;CMakeLists.txt&quot;</span><span class="p">)</span>
+    <span class="n">app_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">get_base_name</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">app_name</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Updating CMakeLists.txt with application name.&quot;</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">replace_line</span><span class="p">(</span>
+        <span class="n">src_cmake</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s1">&#39;APP_NAME empty_application&#39;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s1">&#39;set(APP_NAME </span><span class="si">{</span><span class="n">app_name</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># in case of library update link libraries</span>
+    <span class="k">if</span> <span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;lib_info&#39;</span><span class="p">]:</span>
+        <span class="n">lib_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;lib_info&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">cmake_lib_list</span> <span class="o">=</span> <span class="s1">&#39;;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lib_list</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updating library dependencies in CMakeLists.txt with </span><span class="si">{</span><span class="n">cmake_lib_list</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">replace_line</span><span class="p">(</span>
+            <span class="n">src_cmake</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s1">&#39;PROJECT_LIB_DEPS xilstandalone&#39;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s1">&#39;collect(PROJECT_LIB_DEPS xilstandalone;</span><span class="si">{</span><span class="n">cmake_lib_list</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Generates the metadata for linker script</span>
+    <span class="n">linker_cmd</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;lopper -O </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2"> -- baremetallinker_xlnx </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">srcdir</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span><span class="n">linker_cmd</span><span class="p">,</span>
+        <span class="n">log_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Generating Linker script for </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">app_name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="p">,</span>
+        <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Failed to generate Linker script for </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">app_name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="p">,</span>
+        <span class="n">verbose_level</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="p">)</span>
+    <span class="c1"># Copy the static linker files from embeddedsw to the app src dir</span>
+    <span class="n">linker_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="p">,</span> <span class="s2">&quot;linker_files&quot;</span><span class="p">)</span>
+    <span class="n">linker_src</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_high_precedence_path</span><span class="p">(</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">repo_paths_list</span><span class="p">,</span> <span class="s2">&quot;Linker file directory&quot;</span><span class="p">,</span> <span class="s2">&quot;scripts&quot;</span><span class="p">,</span> <span class="s2">&quot;linker_files&quot;</span>
+        <span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">copy_directory</span><span class="p">(</span><span class="n">linker_src</span><span class="p">,</span> <span class="n">linker_dir</span><span class="p">)</span>
+    <span class="c1"># Copy the User Configuration cmake file to the app src dir</span>
+    <span class="n">user_config_cmake</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_high_precedence_path</span><span class="p">(</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">repo_paths_list</span><span class="p">,</span> <span class="s2">&quot;UserConfig.cmake file&quot;</span><span class="p">,</span> <span class="s2">&quot;cmake&quot;</span><span class="p">,</span> <span class="s2">&quot;UserConfig.cmake&quot;</span>
+        <span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">user_config_cmake</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="p">)</span>
+
+    <span class="c1"># Add domain path entry in the app configuration file.</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;domain_path&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span>
+            <span class="s2">&quot;app_src_dir&quot;</span><span class="p">:</span> <span class="n">esw_app_dir</span><span class="p">,</span>
+            <span class="s2">&quot;template&quot;</span><span class="p">:</span> <span class="s2">&quot;empty_application&quot;</span>
+        <span class="p">}</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">write_yaml</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">app_config_file</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+    <span class="c1"># Create a dummy folder to get compile_commands.json</span>
+    <span class="n">compile_commands_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="p">,</span> <span class="s2">&quot;.compile_commands&quot;</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">compile_commands_dir</span><span class="p">)</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">cmake_paths_append</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">cmake_paths_append</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+    <span class="n">dump</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">discard_dump</span><span class="p">()</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;cmake -G &quot;</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">cmake_generator</span><span class="si">}</span><span class="s1">&quot; </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">cmake_paths_append</span><span class="si">}</span><span class="s1"> -DUSER_LINK_LIBRARIES=</span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> &gt; </span><span class="si">{</span><span class="n">dump</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+        <span class="n">cwd</span> <span class="o">=</span> <span class="n">compile_commands_dir</span><span class="p">,</span>
+        <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Running CMake Configuration&quot;</span><span class="p">,</span>
+        <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to run CMake Configuration&quot;</span><span class="p">,</span>
+        <span class="n">verbose_level</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="p">)</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    compile_commands.json file needs to be kept inside src directory.</span>
+<span class="sd">    Silent_discard needs to be true as for Empty Application, this file</span>
+<span class="sd">    is not created.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">compile_commands_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">compile_commands_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;compile_commands.json&quot;</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">compile_commands_file</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="p">,</span> <span class="n">silent_discard</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    There are few GCC flags (e.g. -fno-tree-loop-distribute-patterns) that</span>
+<span class="sd">    clang server doesnt recognise for Code Intellisense. To get over this</span>
+<span class="sd">    &quot;Unknown Argument&quot; Error of clang, a .clangd file with below content is</span>
+<span class="sd">    to be kept in parallel to compile_commands.json file.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">clangd_ignore_content</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">CompileFlags:</span>
+<span class="s1">    Add: [-Wno-unknown-warning-option, -U__linux__, -U__clang__]</span>
+<span class="s1">    Remove: [-m*, -f*]</span>
+<span class="s1">&#39;&#39;&#39;</span>
+    <span class="n">clangd_ignore_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="p">,</span> <span class="s2">&quot;.clangd&quot;</span><span class="p">)</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">write_into_file</span><span class="p">(</span><span class="n">clangd_ignore_file</span><span class="p">,</span> <span class="n">clangd_ignore_content</span><span class="p">)</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    The generated compile_commands.json file has the directory path (where it</span>
+<span class="sd">    was created originally) in it. That directory needs to be maintained to</span>
+<span class="sd">    avoid clang error.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">compile_commands_dir</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">),</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Success prints if everything went well till this point.</span>
+    <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_file</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">app_config_file</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully created example sources at </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">app_src_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../create_example.html#create_example.main">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">arguments</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Use this script to create driver or library example using the BSP path&quot;</span><span class="p">,</span>
+        <span class="n">usage</span><span class="o">=</span><span class="s1">&#39;use &quot;empyro create_example --help&quot; for more information&#39;</span><span class="p">,</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">RawTextHelpFormatter</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">required_argument</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Required arguments&quot;</span><span class="p">)</span>
+    <span class="n">required_argument</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-d&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--domain_path&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify the built BSP Path&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-w&quot;</span><span class="p">,</span> <span class="s2">&quot;--ws_dir&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Workspace directory (Default: Current Work Directory)&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;.&#39;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="s2">&quot;--src_dir&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;App source directory (Default: &lt;Current Work Directory&gt;/src)&quot;</span>
+    <span class="p">)</span>
+    <span class="n">required_argument</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-e&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--example&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Application name&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">required_argument</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-n&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--name&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify the Instance name (OR) library name&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-v&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--verbose&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;count&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Increase output verbosity&#39;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-r&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--repo_info&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify the .repo.yaml absolute path to use the set repo info&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;.repo.yaml&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">arguments</span><span class="p">))</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">setup_log</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;verbose&quot;</span><span class="p">])</span>
+    <span class="n">create_example</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, PREETHI C.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

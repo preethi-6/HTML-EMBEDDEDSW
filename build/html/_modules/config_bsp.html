@@ -1,0 +1,393 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>config_bsp &mdash; EMBEDDEDSW DOCUMENATION 2025.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=e5803c29"></script>
+      <script src="../_static/doctools.js?v=888ff710"></script>
+      <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EMBEDDEDSW DOCUMENATION
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">my_files</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EMBEDDEDSW DOCUMENATION</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">config_bsp</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for config_bsp</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.</span>
+<span class="c1"># SPDX-License-Identifier: MIT</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module configures the bsp as per the passed library and os related</span>
+<span class="sd">parameters.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">utils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">build_bsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">BSP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">library_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">Library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">regen_bsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">regenerate_bsp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">validate_hw</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidateHW</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Bsp_config"><a class="viewcode-back" href="../config_bsp.html#config_bsp.Bsp_config">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Bsp_config</span><span class="p">(</span><span class="n">BSP</span><span class="p">,</span> <span class="n">Library</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class contains attributes and functions that help in configuring the</span>
+<span class="sd">    created bsp. This makes use of BSP and Library class attirbutes and</span>
+<span class="sd">    functions to fetch the bsp confiration data and the supporting lib funcs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">BSP</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+        <span class="n">Library</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">os</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cmake_paths_append</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span>
+            <span class="n">args</span><span class="p">[</span><span class="s1">&#39;repo_info&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addlib</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;addlib&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rmlib</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;rmlib&quot;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="configure_bsp"><a class="viewcode-back" href="../config_bsp.html#config_bsp.configure_bsp">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">configure_bsp</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function uses Bsp_config class and configures the bsp based on the</span>
+<span class="sd">    user input arguments.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        args (dict): User inputs in a dictionary format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">Bsp_config</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="c1"># If user wants to add a library to the bsp</span>
+    <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">addlib</span><span class="p">:</span>
+        <span class="n">lib_name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">addlib</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Adding </span><span class="si">{</span><span class="n">lib_name</span><span class="si">}</span><span class="s2"> ...&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lib_name</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\b</span>
+<span class="s2">                 </span><span class="si">{</span><span class="n">lib_name</span><span class="si">}</span><span class="s2"> is already added in the bsp. Nothing to do.</span>
+<span class="s2">                 Use config_bsp.py if you want to configure the library.</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">validate_obj</span> <span class="o">=</span> <span class="n">ValidateHW</span><span class="p">(</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">os</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">sdt</span><span class="p">,</span>
+            <span class="n">lib_name</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">repo_yaml_path</span>
+        <span class="p">)</span>
+        <span class="n">validate_obj</span><span class="o">.</span><span class="n">validate_hw</span><span class="p">()</span>
+        <span class="n">lib_list</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">get_depends_libs</span><span class="p">(</span><span class="n">lib_name</span><span class="p">,</span> <span class="n">lib_list</span><span class="o">=</span><span class="p">[</span><span class="n">lib_name</span><span class="p">])</span>
+        <span class="c1"># Remove duplicate libs</span>
+        <span class="n">lib_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">lib_list</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">lib</span> <span class="ow">in</span> <span class="n">lib_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">lib</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">lib_list</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">validate_lib_name</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">gen_lib_metadata</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
+
+        <span class="n">obj</span><span class="o">.</span><span class="n">config_lib</span><span class="p">(</span><span class="n">lib_name</span><span class="p">,</span> <span class="n">lib_list</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">is_app</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully added </span><span class="si">{</span><span class="n">lib_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># If user wants to remove a library from the bsp</span>
+    <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">rmlib</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">rmlib</span> <span class="o">==</span> <span class="n">obj</span><span class="o">.</span><span class="n">os</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removal of </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">os</span><span class="si">}</span><span class="s2"> library is not allowed.&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removing </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">rmlib</span><span class="si">}</span><span class="s2"> ...&quot;</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">remove_lib</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">rmlib</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully removed </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">rmlib</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+    <span class="c1"># If user wants to set library parameters</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;set_property&quot;</span><span class="p">):</span>
+        <span class="n">prop_params</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;set_property&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Validate the command line inputs provided</span>
+        <span class="n">usage_print</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            Please pass library name followed by param:value.</span>
+<span class="s2">            e.g. -st xilffs XILFFS_read_only:ON XILFFS_use_lfn:1</span>
+<span class="s2">            Wrong inputs passed with set_property.</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">prop_params</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">usage_print</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">lib_name</span> <span class="o">=</span> <span class="n">prop_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># assert error if library is not added in bsp</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">validate_lib_in_bsp</span><span class="p">(</span><span class="n">lib_name</span><span class="p">)</span>
+
+        <span class="n">prop_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">lib_name</span><span class="p">:</span> <span class="p">{}}</span>
+        <span class="k">for</span> <span class="n">entries</span> <span class="ow">in</span> <span class="n">prop_params</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="k">if</span> <span class="s2">&quot;:&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">usage_print</span><span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">prop_data</span> <span class="o">=</span> <span class="n">entries</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+                <span class="n">prop_dict</span><span class="p">[</span><span class="n">lib_name</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">prop_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">prop_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]})</span>
+                <span class="n">obj</span><span class="o">.</span><span class="n">validate_lib_param</span><span class="p">(</span><span class="n">lib_name</span><span class="p">,</span> <span class="n">prop_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="c1"># Set the passed value in lib config dictionary</span>
+                <span class="n">obj</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="p">[</span><span class="n">lib_name</span><span class="p">][</span><span class="n">prop_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prop_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;xilpm&#39;</span> <span class="o">==</span> <span class="n">lib_name</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;ZynqMP&quot;</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;family&#39;</span><span class="p">]):</span>
+            <span class="n">dstdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">lib_name</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="s2">&quot;zynqmp&quot;</span><span class="p">,</span> <span class="s2">&quot;client&quot;</span><span class="p">,</span> <span class="s2">&quot;common&quot;</span><span class="p">)</span>
+            <span class="n">ori_sdt_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span> <span class="s2">&quot;hw_artifacts&quot;</span><span class="p">,</span> <span class="s2">&quot;sdt.dts&quot;</span><span class="p">)</span>
+            <span class="n">lopper_cmd_append</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="p">[</span><span class="n">lib_name</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+                <span class="n">lopper_cmd_append</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">lopper_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;lopper -O </span><span class="si">{</span><span class="n">dstdir</span><span class="si">}</span><span class="s2"> -f </span><span class="si">{</span><span class="n">ori_sdt_path</span><span class="si">}</span><span class="s2"> --  generate_config_object pm_cfg_obj.c </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">lopper_cmd_append</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                <span class="n">lopper_cmd</span><span class="p">,</span> <span class="n">cwd</span> <span class="o">=</span> <span class="n">dstdir</span><span class="p">,</span>
+                <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Generating PM Config Object&quot;</span><span class="p">,</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;PM Config object generation Failed&quot;</span><span class="p">,</span>
+                <span class="n">verbose_level</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="p">)</span>
+
+        <span class="c1"># set the cmake options to append lib param values.</span>
+        <span class="n">cmake_cmd_append</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">prop_dict</span><span class="p">[</span><span class="n">lib_name</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Setting </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">cmake_cmd_append</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; -D</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">=&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+
+        <span class="c1"># configure the lib build area with new params</span>
+        <span class="n">build_metadata</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;build_configs/gen_bsp&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">os</span> <span class="o">==</span> <span class="s2">&quot;freertos&quot;</span> <span class="ow">and</span> <span class="n">lib_name</span> <span class="o">==</span> <span class="s2">&quot;freertos&quot;</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;cmake </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_path</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">cmake_paths_append</span><span class="si">}</span><span class="s1"> -DSUBDIR_LIST=&quot;freertos10_xilinx&quot; </span><span class="si">{</span><span class="n">cmake_cmd_append</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="n">cwd</span> <span class="o">=</span> <span class="n">build_metadata</span><span class="p">,</span>
+                <span class="n">log_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Configuring FreeRTOS with </span><span class="si">{</span><span class="n">cmake_cmd_append</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">error_message</span><span class="o">=</span><span class="s2">&quot;Failed to configure FreeRTOS  &quot;</span><span class="p">,</span>
+                <span class="n">verbose_level</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;cmake </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_path</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="n">cmake_paths_append</span><span class="si">}</span><span class="s1"> -DSUBDIR_LIST=&quot;</span><span class="si">{</span><span class="n">lib_name</span><span class="si">}</span><span class="s1">&quot; </span><span class="si">{</span><span class="n">cmake_cmd_append</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="n">cwd</span> <span class="o">=</span> <span class="n">build_metadata</span><span class="p">,</span>
+                <span class="n">log_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Configuring </span><span class="si">{</span><span class="n">lib_name</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="n">cmake_cmd_append</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Failed to configure </span><span class="si">{</span><span class="n">lib_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">verbose_level</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Update the lib config file</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">proc</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">proc_config</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="p">)</span>
+            <span class="n">proc_config</span> <span class="o">=</span> <span class="p">{</span><span class="n">obj</span><span class="o">.</span><span class="n">proc</span><span class="p">:</span><span class="n">proc_config</span><span class="p">}</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;proc_config&quot;</span><span class="p">,</span> <span class="n">proc_config</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;add&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">os</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">os_config</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">os</span><span class="p">)</span>
+            <span class="n">os_config</span> <span class="o">=</span> <span class="p">{</span><span class="n">obj</span><span class="o">.</span><span class="n">os</span><span class="p">:</span><span class="n">os_config</span><span class="p">}</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;os_config&quot;</span><span class="p">,</span> <span class="n">os_config</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;add&quot;</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;lib_config&quot;</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;config&quot;</span><span class="p">,</span> <span class="s2">&quot;reconfig&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully configured BSP&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;set_repo_path&quot;</span><span class="p">):</span>
+        <span class="n">prop_params</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;set_repo_path&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Validate the command line inputs provided</span>
+        <span class="n">usage_print</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            Please pass component and component name followed by path</span>
+<span class="s2">            component name:path.</span>
+<span class="s2">            e.g. -sr driver csudma:&lt;path to driver source&gt;</span>
+<span class="s2">            Wrong inputs passed with set_repo_path.</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">prop_params</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">usage_print</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Copy the repo.yaml to the bsp path</span>
+        <span class="n">repo_yaml</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span> <span class="s1">&#39;.repo.yaml&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_file</span><span class="p">(</span><span class="n">repo_yaml</span><span class="p">):</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;repo_info&#39;</span><span class="p">],</span> <span class="n">obj</span><span class="o">.</span><span class="n">domain_path</span><span class="p">)</span>
+
+        <span class="n">component</span> <span class="o">=</span> <span class="n">prop_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">entries</span> <span class="ow">in</span> <span class="n">prop_params</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="k">if</span> <span class="s2">&quot;:&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">usage_print</span><span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">prop_data</span> <span class="o">=</span> <span class="n">entries</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+                <span class="n">component_name</span> <span class="o">=</span> <span class="n">prop_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;nt&quot;</span><span class="p">:</span>
+                    <span class="n">component_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">prop_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span> <span class="o">+</span> <span class="n">prop_data</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">component_path</span> <span class="o">=</span> <span class="n">prop_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="c1"># Update the .repo.yaml and the bsp.yaml paths</span>
+                <span class="n">repo_metadata</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">(</span><span class="n">repo_yaml</span><span class="p">)</span>
+                <span class="c1"># Get the index</span>
+                <span class="n">comp_dict</span> <span class="o">=</span> <span class="n">repo_metadata</span><span class="p">[</span><span class="n">component</span><span class="p">]</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="n">comp_dict</span><span class="p">[</span><span class="n">component_name</span><span class="p">][</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">index</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">component_path</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Provided </span><span class="si">{</span><span class="n">component_path</span><span class="si">}</span><span class="s2"> is not a valid path&quot;</span><span class="p">)</span>
+                    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+                <span class="n">old_path</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">path</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="n">repo_yaml</span><span class="p">,</span> <span class="s2">&quot;repo_meta&quot;</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">comp_dict</span><span class="p">)</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">replace_line</span><span class="p">(</span>
+                    <span class="n">obj</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span>
+                    <span class="n">old_path</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s1">&#39;    path: </span><span class="si">{</span><span class="n">component_path</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Regenerate bsp only for OSF flow</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;OSF&quot;</span><span class="p">):</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;sdt&#39;</span><span class="p">:</span><span class="n">obj</span><span class="o">.</span><span class="n">sdt</span><span class="p">})</span>
+            <span class="n">regenerate_bsp</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../config_bsp.html#config_bsp.main">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">arguments</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Use this script to modify BSP Settings&quot;</span><span class="p">,</span>
+        <span class="n">usage</span><span class="o">=</span><span class="s1">&#39;use &quot;empyro config_bsp --help&quot; for more information&#39;</span><span class="p">,</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">RawTextHelpFormatter</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">required_argument</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Required arguments&quot;</span><span class="p">)</span>
+    <span class="n">required_argument</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-d&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--domain_path&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Domain directory Path&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_mutually_exclusive_group</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-al&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--addlib&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify libaries that needs to be added if any&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-rl&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--rmlib&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify libaries that needs to be removed if any&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-st&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--set_property&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify libaries with the params that need to be configured&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-sr&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--set_repo_path&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Update the path for a given component&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-r&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--repo_info&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify the .repo.yaml absolute path to use the set repo info&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;.repo.yaml&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-v&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--verbose&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;count&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Increase output verbosity&#39;</span>
+    <span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">arguments</span><span class="p">))</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">setup_log</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;verbose&quot;</span><span class="p">])</span>
+    <span class="n">configure_bsp</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, PREETHI C.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

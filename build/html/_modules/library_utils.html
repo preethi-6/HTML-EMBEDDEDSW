@@ -1,0 +1,649 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>library_utils &mdash; EMBEDDEDSW DOCUMENATION 2025.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=e5803c29"></script>
+      <script src="../_static/doctools.js?v=888ff710"></script>
+      <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EMBEDDEDSW DOCUMENATION
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">my_files</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EMBEDDEDSW DOCUMENATION</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">library_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for library_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.</span>
+<span class="c1"># SPDX-License-Identifier: MIT</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module acts as a supporting module to get/set library related information</span>
+<span class="sd">inside the bsp. It helps in validating the library input, generating the</span>
+<span class="sd">library paramters database and adding/modifying the library when all the</span>
+<span class="sd">criteria are met. It doesnt have any main() function and running this</span>
+<span class="sd">module independently is not intended.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">utils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">open_amp</span><span class="w"> </span><span class="kn">import</span> <span class="n">open_amp_copy_lib_src</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">repo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Repo</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_time</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Library"><a class="viewcode-back" href="../library_utils.html#library_utils.Library">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Library</span><span class="p">(</span><span class="n">Repo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class contains attributes and functions that help in validating</span>
+<span class="sd">    library related inputs and adding a library to the created bsp.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">domain_path</span><span class="p">,</span> <span class="n">proc</span><span class="p">,</span> <span class="n">bsp_os</span><span class="p">,</span> <span class="n">sdt</span><span class="p">,</span> <span class="n">cmake_paths_append</span><span class="p">,</span> <span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">repo_info</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">repo_yaml_path</span><span class="o">=</span> <span class="n">repo_info</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span> <span class="o">=</span> <span class="n">domain_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc</span> <span class="o">=</span> <span class="n">proc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">os</span> <span class="o">=</span> <span class="n">bsp_os</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sdt</span> <span class="o">=</span> <span class="n">sdt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain_config_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span> <span class="s2">&quot;bsp.yaml&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmake_paths_append</span> <span class="o">=</span> <span class="n">cmake_paths_append</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span> <span class="o">=</span> <span class="n">libsrc_folder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain_data</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fetch_yaml_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lib_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_data</span><span class="p">[</span><span class="s2">&quot;lib_config&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">os</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bsp_lib_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_data</span><span class="p">[</span><span class="s2">&quot;lib_config&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_data</span><span class="p">[</span><span class="s2">&quot;os_config&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_data</span><span class="p">[</span><span class="s2">&quot;proc_config&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lib_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_data</span><span class="p">[</span><span class="s2">&quot;lib_info&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">os_config</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmake_generator</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_cmake_generator</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Library.validate_lib_name"><a class="viewcode-back" href="../library_utils.html#library_utils.Library.validate_lib_name">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate_lib_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if the passed library name from the user is valid for the sdt</span>
+<span class="sd">        proc and os combination. Exits with valid assertion if the user input</span>
+<span class="sd">        is wrong.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lib (str): Library name that needs to be validated</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lib_list_yaml_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span> <span class="s2">&quot;lib_list.yaml&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;VALIDATE_ARGS&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;True&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_file</span><span class="p">(</span><span class="n">lib_list_yaml_path</span><span class="p">):</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;lopper --werror -f -O </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2"> -- baremetal_getsupported_comp_xlnx </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">repo_yaml_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Extracting and validating supported bare-metal components for processor&quot;</span><span class="p">,</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Could not fetch the required supported component info&quot;</span><span class="p">,</span>
+                    <span class="n">verbose_level</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="p">)</span>
+            <span class="n">proc_os_data</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fetch_yaml_data</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span> <span class="s2">&quot;lib_list.yaml&quot;</span><span class="p">),</span> <span class="s2">&quot;lib_list&quot;</span>
+            <span class="p">)</span>
+            <span class="n">lib_list_avail</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">proc_os_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">os</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">lib</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lib_list_avail</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lib</span><span class="si">}</span><span class="s2"> is not a valid library for the given proc and os combination. Valid library names are </span><span class="si">{</span><span class="n">lib_list_avail</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Library.validate_lib_in_bsp"><a class="viewcode-back" href="../library_utils.html#library_utils.Library.validate_lib_in_bsp">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate_lib_in_bsp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if the passed library name from the user exists in the bsp. This</span>
+<span class="sd">        is a helper function to support remove library and set property usecases.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lib (str): Library name that needs to be validated</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;VALIDATE_ARGS&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;True&quot;</span> <span class="ow">and</span> <span class="n">lib</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lib</span><span class="si">}</span><span class="s2"> is not added to the bsp. Add it first using -al/--addlib&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Library.validate_lib_param"><a class="viewcode-back" href="../library_utils.html#library_utils.Library.validate_lib_param">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate_lib_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib</span><span class="p">,</span> <span class="n">lib_param</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if the passed library parameter that needs to be set in library</span>
+<span class="sd">        configuration is valid. Exits with a valid assertion if parameter name</span>
+<span class="sd">        is wrong. This acts as a helper in set property usecase.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            | lib (str): Library name whose config needs to be changed</span>
+<span class="sd">            | lib_param (str): Library parameter that needs to be changed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;VALIDATE_ARGS&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;True&quot;</span>
+            <span class="ow">and</span> <span class="n">lib_param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="p">[</span><span class="n">lib</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lib_param</span><span class="si">}</span><span class="s2"> is not a valid param for </span><span class="si">{</span><span class="n">lib</span><span class="si">}</span><span class="s2">. Valid list of params are </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">bsp_lib_config</span><span class="p">[</span><span class="n">lib</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Library.copy_lib_src"><a class="viewcode-back" href="../library_utils.html#library_utils.Library.copy_lib_src">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">copy_lib_src</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Copies the src directory of the passed library from the respective path</span>
+<span class="sd">        of embeddedsw to the libsrc folder of bsp.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lib (str): library whose source code needs to be copied</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            | libdir (str): Library path inside embeddedsw</span>
+<span class="sd">            | srcdir (str): Path of src folder of library inside embeddedsw</span>
+<span class="sd">            | dstdir (str): Path of src folder inside libsrc folder of bsp</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">libdir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
+        <span class="n">srcdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">libdir</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lib</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;libmetal&#39;</span><span class="p">,</span> <span class="s1">&#39;openamp&#39;</span><span class="p">]:</span>
+            <span class="n">srcdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;XILINX_VITIS&#39;</span><span class="p">),</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lib</span> <span class="o">==</span> <span class="s1">&#39;openamp&#39;</span><span class="p">:</span>
+                <span class="c1"># cached library name differs from directory name in repo.</span>
+                <span class="n">srcdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">srcdir</span><span class="p">,</span> <span class="s1">&#39;open-amp&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1"># no workaround needed for libmetal</span>
+                <span class="n">srcdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">srcdir</span><span class="p">,</span> <span class="n">lib</span><span class="p">)</span>
+
+
+        <span class="n">dstdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">lib</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">copy_directory</span><span class="p">(</span><span class="n">srcdir</span><span class="p">,</span> <span class="n">dstdir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lib</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;libmetal&#39;</span><span class="p">,</span> <span class="s1">&#39;openamp&#39;</span><span class="p">]:</span>
+            <span class="n">open_amp_copy_lib_src</span><span class="p">(</span><span class="n">libdir</span><span class="p">,</span> <span class="n">dstdir</span><span class="p">,</span> <span class="n">lib</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lib_info</span><span class="p">[</span><span class="n">lib</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="n">libdir</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">libdir</span><span class="p">,</span> <span class="n">srcdir</span><span class="p">,</span> <span class="n">dstdir</span></div>
+
+<div class="viewcode-block" id="Library.get_default_lib_params"><a class="viewcode-back" href="../library_utils.html#library_utils.Library.get_default_lib_params">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_default_lib_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">build_lib_dir</span><span class="p">,</span> <span class="n">lib_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a library configuration data that contains all the available</span>
+<span class="sd">        parameters and their values of each library added in the bsp.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            build_lib_dir (str):</span>
+<span class="sd">                Cmake directory where the libraries are configured and compiled</span>
+<span class="sd">            lib_list (str): List of libraries added in the bsp.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            default_lib_config (dict):</span>
+<span class="sd">                A dictionary that contains all the available parameters and</span>
+<span class="sd">                their values of each library added in the bsp.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Read all the cmake variables that got set during cmake config.</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">build_lib_dir</span><span class="p">,</span> <span class="s2">&quot;cmake_lib_configs.txt&quot;</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span>
+        <span class="p">)</span> <span class="k">as</span> <span class="n">cmake_confs</span><span class="p">:</span>
+            <span class="n">line_entries</span> <span class="o">=</span> <span class="n">cmake_confs</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+
+        <span class="c1"># Read all the cmake entries that got cached during cmake config. This</span>
+        <span class="c1"># will help us in getting all the possible options for a given param.</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">build_lib_dir</span><span class="p">,</span> <span class="s2">&quot;CMakeCache.txt&quot;</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cmake_cache</span><span class="p">:</span>
+            <span class="n">cmake_cache_entries</span> <span class="o">=</span> <span class="n">cmake_cache</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+
+        <span class="n">default_lib_config</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">line_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">line_entries</span><span class="p">)):</span>
+            <span class="n">lib_config_entry</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">permission</span> <span class="o">=</span> <span class="s2">&quot;read_write&quot;</span>
+            <span class="k">for</span> <span class="n">lib</span> <span class="ow">in</span> <span class="n">lib_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">lib</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">default_lib_config</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">default_lib_config</span><span class="p">[</span><span class="n">lib</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="c1"># lwip param names are starting with lwip in cmake file but</span>
+                <span class="c1"># lib name is lwip220.</span>
+                <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;lwip&quot;</span> <span class="k">if</span> <span class="n">lib</span> <span class="o">==</span> <span class="s2">&quot;lwip220&quot;</span> <span class="k">else</span> <span class="n">lib</span>
+                <span class="n">proc_prefix</span> <span class="o">=</span> <span class="s2">&quot;proc&quot;</span> <span class="k">if</span> <span class="n">lib</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc</span> <span class="k">else</span> <span class="n">lib</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;^</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">line_entries</span><span class="p">[</span><span class="n">line_index</span><span class="p">],</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span> <span class="ow">or</span>
+                   <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;^</span><span class="si">{</span><span class="n">proc_prefix</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">line_entries</span><span class="p">[</span><span class="n">line_index</span><span class="p">],</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)):</span>
+                    <span class="n">param_name</span> <span class="o">=</span> <span class="n">line_entries</span><span class="p">[</span><span class="n">line_index</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="c1"># In cmake there are just two types of params: option and string.</span>
+                    <span class="n">param_type</span> <span class="o">=</span> <span class="n">line_entries</span><span class="p">[</span><span class="n">line_index</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="c1"># cmake syntax is using &#39;ON/OFF&#39; option, &#39;True/False&#39; is lagacy entry.</span>
+                    <span class="n">bool_match</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ON&quot;</span><span class="p">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;OFF&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span><span class="p">}</span>
+                    <span class="n">param_opts</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">param_value</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="n">line_entries</span><span class="p">[</span><span class="n">line_index</span><span class="p">]</span>
+                            <span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                            <span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                            <span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">param_type</span> <span class="o">==</span> <span class="s2">&quot;BOOL&quot;</span><span class="p">:</span>
+                            <span class="n">param_value</span> <span class="o">=</span> <span class="n">bool_match</span><span class="p">[</span><span class="n">param_value</span><span class="p">]</span>
+                            <span class="n">param_type</span> <span class="o">=</span> <span class="s2">&quot;boolean&quot;</span>
+                            <span class="c1"># Every entry from command line will come as string</span>
+                            <span class="n">param_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span><span class="p">]</span>
+                        <span class="k">elif</span> <span class="n">param_type</span> <span class="o">==</span> <span class="s2">&quot;STRING&quot;</span><span class="p">:</span>
+                            <span class="c1"># read only params</span>
+                            <span class="n">read_only_param</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;proc_archiver&quot;</span><span class="p">,</span> <span class="s2">&quot;proc_assembler&quot;</span><span class="p">,</span> <span class="s2">&quot;proc_compiler&quot;</span><span class="p">,</span> <span class="s2">&quot;proc_compiler_flags&quot;</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">read_only_param</span><span class="p">:</span>
+                                <span class="n">permission</span> <span class="o">=</span> <span class="s2">&quot;readonly&quot;</span>
+                            <span class="c1"># Showing it as integer (legacy entry)</span>
+                            <span class="k">if</span> <span class="n">param_value</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                                <span class="n">param_type</span> <span class="o">=</span> <span class="s2">&quot;integer&quot;</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">param_type</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span>
+                            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">cmake_cache_entries</span><span class="p">:</span>
+                                <span class="c1"># Get the cached param options</span>
+                                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;^</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">-STRINGS&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+                                    <span class="k">try</span><span class="p">:</span>
+                                        <span class="n">param_opts</span> <span class="o">=</span> <span class="p">(</span>
+                                            <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">)</span>
+                                        <span class="p">)</span>
+                                    <span class="k">except</span><span class="p">:</span>
+                                        <span class="n">param_opts</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="c1"># For some entries there is no cache option (like start</span>
+                    <span class="c1"># address which can be anything ), it&#39;s empty.</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="n">param_value</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                        <span class="n">param_type</span> <span class="o">=</span> <span class="s2">&quot;integer&quot;</span>
+                        <span class="n">param_opts</span> <span class="o">=</span> <span class="p">[]</span>
+
+                    <span class="n">lib_config_entry</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="n">param_name</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">param_name</span><span class="p">,</span>
+                            <span class="s2">&quot;permission&quot;</span><span class="p">:</span> <span class="n">permission</span><span class="p">,</span>
+                            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">param_type</span><span class="p">,</span>
+                            <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">param_value</span><span class="p">,</span>
+                            <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="n">param_value</span><span class="p">,</span>
+                            <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">param_opts</span><span class="p">,</span>
+                            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">line_entries</span><span class="p">[</span><span class="n">line_index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                            <span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                            <span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;// &quot;</span><span class="p">),</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+
+                    <span class="n">default_lib_config</span><span class="p">[</span><span class="n">lib</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">lib_config_entry</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">default_lib_config</span></div>
+
+<div class="viewcode-block" id="Library.validate_drv_for_lib"><a class="viewcode-back" href="../library_utils.html#library_utils.Library.validate_drv_for_lib">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate_drv_for_lib</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp_name</span><span class="p">,</span> <span class="n">drvlist</span><span class="p">):</span>
+        <span class="n">comp_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="n">comp_name</span><span class="p">)</span>
+        <span class="n">yaml_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">comp_dir</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comp_name</span><span class="si">}</span><span class="s2">.yaml&quot;</span><span class="p">)</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;depends&quot;</span><span class="p">):</span>
+            <span class="n">dep_drvlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;depends&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">valid_lib</span> <span class="o">=</span> <span class="p">[</span><span class="n">drv</span> <span class="k">for</span> <span class="n">drv</span> <span class="ow">in</span> <span class="n">dep_drvlist</span> <span class="k">if</span> <span class="n">drv</span> <span class="ow">in</span> <span class="n">drvlist</span><span class="p">]</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Since sleep related implementation is part of xiltimer library</span>
+<span class="sd">            it needs to be pulled irrespective of the hardware dependency.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">valid_lib</span> <span class="ow">or</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;xiltimer&quot;</span><span class="p">,</span> <span class="n">comp_name</span><span class="p">)</span> <span class="ow">or</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;xilflash&quot;</span><span class="p">,</span> <span class="n">comp_name</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="Library.is_valid_lib"><a class="viewcode-back" href="../library_utils.html#library_utils.Library.is_valid_lib">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">is_valid_lib</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp_name</span><span class="p">,</span> <span class="n">silent_discard</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">comp_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="n">comp_name</span><span class="p">)</span>
+        <span class="n">yaml_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">comp_dir</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comp_name</span><span class="si">}</span><span class="s2">.yaml&quot;</span><span class="p">)</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">)</span>
+        <span class="n">cpu_list_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span> <span class="s2">&quot;cpulist.yaml&quot;</span><span class="p">)</span>
+        <span class="n">avail_cpu_data</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fetch_yaml_data</span><span class="p">(</span><span class="n">cpu_list_file</span><span class="p">,</span> <span class="s2">&quot;cpulist&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;supported_processors&quot;</span><span class="p">):</span>
+            <span class="n">proc_list</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;supported_processors&quot;</span><span class="p">)</span>
+            <span class="n">proc_ip_name</span> <span class="o">=</span> <span class="n">avail_cpu_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">proc_ip_name</span> <span class="ow">in</span> <span class="n">proc_list</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">silent_discard</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comp_name</span><span class="si">}</span><span class="s2"> Library is not valid for the given processor: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="Library.get_depends_libs"><a class="viewcode-back" href="../library_utils.html#library_utils.Library.get_depends_libs">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_depends_libs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib_name</span><span class="p">,</span> <span class="n">lib_list</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="n">app_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="n">lib_name</span><span class="p">)</span>
+        <span class="n">yaml_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app_dir</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lib_name</span><span class="si">}</span><span class="s2">.yaml&quot;</span><span class="p">)</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">schema</span> <span class="ow">and</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;depends_libs&quot;</span><span class="p">,</span> <span class="p">{}):</span>
+           <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">props</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;depends_libs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_valid_lib</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">silent_discard</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">lib_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">name</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_depends_libs</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">lib_list</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">lib_list</span></div>
+
+
+    <span class="nd">@log_time</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_lib_for_apps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds library to the bsp. Creates metadata if needed for the library,</span>
+<span class="sd">        runs cmake configure to prepare the build area for library</span>
+<span class="sd">        compilation and creates the library configuration of the bsp.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            app_name (str):</span>
+<span class="sd">                template app name. If template depends on certain libs, it</span>
+<span class="sd">                copies their source to the libsrc and it fetches the req</span>
+<span class="sd">                library configurations for those libs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_add_lib_config</span><span class="p">(</span><span class="n">props</span><span class="p">,</span><span class="n">cmake_cmd_append</span><span class="p">,</span><span class="n">bool_match</span><span class="p">,</span><span class="n">family</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;&quot;Adds the config depends libs from the yaml,</span>
+<span class="sd">                helps to add device level config based on device family</span>
+<span class="sd">            Args:</span>
+<span class="sd">                props(dict)            : Property values</span>
+<span class="sd">                cmake_cmd_append(str)  : cmake command string</span>
+<span class="sd">                bool_match(dict)       : True and False values</span>
+<span class="sd">                family(str)            : Device family name</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">props</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">family</span><span class="p">:</span>
+                        <span class="n">cmake_cmd_append</span> <span class="o">=</span> <span class="n">_add_lib_config</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="n">cmake_cmd_append</span><span class="p">,</span><span class="n">bool_match</span><span class="p">,</span><span class="n">family</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">bool_match</span><span class="p">:</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="n">bool_match</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+                    <span class="n">cmake_cmd_append</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; -D</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">return</span> <span class="n">cmake_cmd_append</span>
+
+        <span class="n">cmake_cmd_append</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">lib_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Read the yaml file of the passed component.</span>
+        <span class="n">app_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="n">app_name</span><span class="p">)</span>
+        <span class="n">yaml_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app_dir</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">app_name</span><span class="si">}</span><span class="s2">.yaml&quot;</span><span class="p">)</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">)</span>
+        <span class="n">lib_config</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">family</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;family&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">schema</span> <span class="ow">and</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;depends_libs&quot;</span><span class="p">,</span> <span class="p">{}):</span>
+            <span class="c1"># cmake syntax is using &#39;ON/OFF&#39; option, &#39;True/False&#39; is lagacy entry.</span>
+            <span class="n">bool_match</span> <span class="o">=</span> <span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="s2">&quot;ON&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="s2">&quot;OFF&quot;</span><span class="p">}</span>
+            <span class="c1"># If the passed template has any lib dependency, add those dependencies.</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">props</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;depends_libs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_valid_lib</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">lib_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">name</span><span class="p">]</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_lib_src</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">props</span><span class="p">:</span>
+                    <span class="c1"># If the template needs specific config param of the lib.</span>
+                    <span class="n">cmake_cmd_append</span> <span class="o">=</span> <span class="n">_add_lib_config</span><span class="p">(</span><span class="n">props</span><span class="p">,</span><span class="n">cmake_cmd_append</span><span class="p">,</span><span class="n">bool_match</span><span class="p">,</span><span class="n">family</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">app_name</span> <span class="o">==</span> <span class="s2">&quot;zynqmp_fsbl&quot;</span><span class="p">:</span>
+            <span class="n">cmake_cmd_append</span> <span class="o">+=</span> <span class="s2">&quot; -Dstandalone_zynqmp_fsbl_bsp=ON&quot;</span>
+        <span class="c1"># for freertos os we need to enable interval timer always</span>
+        <span class="k">if</span> <span class="s2">&quot;freertos&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">os</span><span class="p">:</span>
+            <span class="n">cmake_cmd_append</span> <span class="o">+=</span> <span class="s2">&quot; -DXILTIMER_en_interval_timer=ON&quot;</span>
+            <span class="n">toolchain_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;toolchain_file&#39;</span><span class="p">])</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">add_newline</span><span class="p">(</span><span class="n">toolchain_file</span><span class="p">,</span> <span class="s1">&#39;ADD_DEFINITIONS(-DFREERTOS_BSP)&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">schema</span> <span class="ow">and</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;os_config&quot;</span><span class="p">,</span> <span class="p">{}):</span>
+            <span class="k">if</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;os_config&quot;</span><span class="p">,</span> <span class="p">{})[</span><span class="bp">self</span><span class="o">.</span><span class="n">os</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">os_config</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;os_config&quot;</span><span class="p">,</span> <span class="p">{})[</span><span class="bp">self</span><span class="o">.</span><span class="n">os</span><span class="p">]</span>
+                <span class="n">props</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;os_config&quot;</span><span class="p">,</span> <span class="p">{})[</span><span class="bp">self</span><span class="o">.</span><span class="n">os</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">props</span><span class="p">:</span>
+                    <span class="c1"># If the template needs specific config param of the os.</span>
+                    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">props</span><span class="p">:</span>
+                        <span class="n">cmake_cmd_append</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; -D</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">lib_list</span><span class="p">,</span> <span class="n">cmake_cmd_append</span>
+
+    <span class="nd">@log_time</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">config_lib</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp_name</span><span class="p">,</span> <span class="n">lib_list</span><span class="p">,</span> <span class="n">cmake_cmd_append</span><span class="p">,</span> <span class="n">is_app</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">lib_config</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">lib_list</span><span class="p">:</span>
+            <span class="c1"># Run cmake configuration with all the default cache entries</span>
+            <span class="n">build_metadata</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;build_configs/gen_bsp&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;libmetal&quot;</span> <span class="ow">in</span> <span class="n">lib_list</span><span class="p">):</span>
+                <span class="n">toolchain_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;toolchain_file&#39;</span><span class="p">])</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">add_newline</span><span class="p">(</span><span class="n">toolchain_file</span><span class="p">,</span> <span class="s1">&#39;ADD_DEFINITIONS(-DXLNX_PLATFORM)&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;standalone&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;os&#39;</span><span class="p">]):</span>
+                    <span class="n">utils</span><span class="o">.</span><span class="n">add_newline</span><span class="p">(</span><span class="n">toolchain_file</span><span class="p">,</span> <span class="s1">&#39;ADD_DEFINITIONS(-D__BAREMETAL__)&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cmake_paths_append</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmake_paths_append</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="n">build_metadata</span> <span class="o">=</span> <span class="n">build_metadata</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="n">cmake_lib_list</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lib_list</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># BSP_LIBSRC_SUBDIRS needs to be modified to avoid checking dependency chain</span>
+                <span class="c1"># during regen_bsp</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">modify_cmake_subdirs</span><span class="p">(</span><span class="n">lib_list</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;add&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">is_app</span><span class="p">:</span>
+                    <span class="n">cmake_cmd_append</span> <span class="o">=</span> <span class="n">cmake_cmd_append</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+                    <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;cmake -G &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cmake_generator</span><span class="si">}</span><span class="s1">&quot; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cmake_paths_append</span><span class="si">}</span><span class="s1"> -DSUBDIR_LIST=&quot;</span><span class="si">{</span><span class="n">cmake_lib_list</span><span class="si">}</span><span class="s1">&quot; </span><span class="si">{</span><span class="n">cmake_cmd_append</span><span class="si">}</span><span class="s1"> -LH &gt; cmake_lib_configs.txt&#39;</span><span class="p">,</span>
+                        <span class="n">cwd</span> <span class="o">=</span> <span class="n">build_metadata</span><span class="p">,</span>
+                        <span class="n">log_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Running CMake Configuration with </span><span class="si">{</span><span class="n">cmake_lib_list</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Failed to run CMake Configuration with </span><span class="si">{</span><span class="n">cmake_lib_list</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;cmake -G &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cmake_generator</span><span class="si">}</span><span class="s1">&quot; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cmake_paths_append</span><span class="si">}</span><span class="s1"> -DSUBDIR_LIST=&quot;</span><span class="si">{</span><span class="n">cmake_lib_list</span><span class="si">}</span><span class="s1">&quot; -LH &gt; cmake_lib_configs.txt&#39;</span><span class="p">,</span>
+                        <span class="n">cwd</span> <span class="o">=</span> <span class="n">build_metadata</span><span class="p">,</span>
+                        <span class="n">log_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Running CMake Configuration with </span><span class="si">{</span><span class="n">cmake_lib_list</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Failed to run CMake Configuration with </span><span class="si">{</span><span class="n">cmake_lib_list</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;config&quot;</span><span class="p">,</span> <span class="s2">&quot;reconfig&quot;</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">lib_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">comp_name</span><span class="p">)</span>
+                <span class="c1"># Remove library src folder from libsrc</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">lib_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">modify_cmake_subdirs</span><span class="p">(</span><span class="n">lib_list</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;remove&#39;</span><span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># Get the default cmake entries into yaml configuration file</span>
+            <span class="n">ignore_default_data_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;standalone&quot;</span><span class="p">,</span> <span class="s2">&quot;freertos10_xilinx&quot;</span><span class="p">,</span> <span class="s2">&quot;libsrc&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">ignore_default_data_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">lib_list</span><span class="p">:</span>
+                    <span class="n">lib_list</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+            <span class="n">lib_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_default_lib_params</span><span class="p">(</span><span class="n">build_metadata</span><span class="p">,</span> <span class="n">lib_list</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_app</span><span class="p">:</span>
+                <span class="n">comp_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="n">comp_name</span><span class="p">)</span>
+                <span class="n">yaml_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">comp_dir</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comp_name</span><span class="si">}</span><span class="s2">.yaml&quot;</span><span class="p">)</span>
+                <span class="n">schema</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">)</span>
+                <span class="c1"># Add the modified lib param values in yaml configuration dict</span>
+                <span class="k">if</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;depends_libs&quot;</span><span class="p">,</span> <span class="p">{}):</span>
+                    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">props</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;depends_libs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_valid_lib</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                            <span class="k">continue</span>
+                        <span class="k">if</span> <span class="n">props</span><span class="p">:</span>
+                            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">props</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+                                    <span class="n">lib_config</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">lib</span> <span class="ow">in</span> <span class="n">lib_list</span><span class="p">:</span>
+                <span class="c1"># Update examples if any for the library</span>
+                <span class="n">comp_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_comp_dir</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
+                <span class="n">yaml_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">comp_dir</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lib</span><span class="si">}</span><span class="s2">.yaml&quot;</span><span class="p">)</span>
+                <span class="n">schema</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">)</span>
+                <span class="n">example_schema</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;examples&#39;</span><span class="p">,{})</span>
+                <span class="k">if</span> <span class="n">example_schema</span><span class="p">:</span>
+                    <span class="c1"># check for platform dependency</span>
+                    <span class="c1">#supported_platforms</span>
+                    <span class="n">example_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">for</span> <span class="n">ex</span><span class="p">,</span><span class="n">deps</span> <span class="ow">in</span> <span class="n">example_schema</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="k">if</span> <span class="n">deps</span><span class="p">:</span>
+                            <span class="c1"># Read the supported_platforms check if any</span>
+                            <span class="n">dep_plat_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">dep</span> <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="n">deps</span> <span class="k">if</span> <span class="s2">&quot;supported_platforms&quot;</span> <span class="ow">in</span> <span class="n">dep</span><span class="p">]</span>
+                            <span class="n">dep_file_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">dep</span> <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="n">deps</span> <span class="k">if</span> <span class="s2">&quot;dependency_files&quot;</span> <span class="ow">in</span> <span class="n">dep</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="n">dep_plat_list</span><span class="p">:</span>
+                                <span class="n">plat_list</span> <span class="o">=</span> <span class="n">dep_plat_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;supported_platforms&#39;</span><span class="p">]</span>
+                                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;family&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">plat_list</span><span class="p">:</span>
+                                    <span class="k">if</span> <span class="n">dep_file_list</span><span class="p">:</span>
+                                        <span class="n">example_dict</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">ex</span><span class="p">:</span><span class="n">dep_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;dependency_files&#39;</span><span class="p">]})</span>
+                                    <span class="k">else</span><span class="p">:</span>
+                                        <span class="n">example_dict</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">ex</span><span class="p">:[]})</span>
+                            <span class="k">elif</span> <span class="n">dep_file_list</span><span class="p">:</span>
+                                <span class="n">example_dict</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">ex</span><span class="p">:</span><span class="n">dep_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;dependency_files&#39;</span><span class="p">]})</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">example_dict</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">ex</span><span class="p">:[]})</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">lib_info</span><span class="p">[</span><span class="n">lib</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;examples&quot;</span><span class="p">:</span><span class="n">example_dict</span><span class="p">})</span>
+            <span class="c1"># Update the yaml config file with new entries.</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;lib_config&quot;</span><span class="p">,</span> <span class="n">lib_config</span><span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;lib_info&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lib_info</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Library.gen_lib_metadata"><a class="viewcode-back" href="../library_utils.html#library_utils.Library.gen_lib_metadata">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">gen_lib_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib</span><span class="p">):</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">src_dir</span><span class="p">,</span> <span class="n">dst_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_lib_src</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
+        <span class="n">lopper_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;lopper -O </span><span class="si">{</span><span class="n">dst_dir</span><span class="si">}</span><span class="s2"> -f </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="si">}</span><span class="s2"> -- bmcmake_metadata_xlnx </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">src_dir</span><span class="si">}</span><span class="s2"> hwcmake_metadata </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">repo_yaml_path</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+            <span class="n">lopper_cmd</span><span class="p">,</span>
+            <span class="n">cwd</span> <span class="o">=</span> <span class="n">dst_dir</span><span class="p">,</span>
+            <span class="n">log_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Generating CMake Metadata for </span><span class="si">{</span><span class="n">lib</span><span class="si">}</span><span class="s2"> &quot;</span><span class="p">,</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Failed to generate CMake Metadata for </span><span class="si">{</span><span class="n">lib</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;xilpm&quot;</span> <span class="ow">in</span> <span class="n">lib</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;ZynqMP&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;family&#39;</span><span class="p">]):</span>
+            <span class="n">dstdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">lib</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="s2">&quot;zynqmp&quot;</span><span class="p">,</span> <span class="s2">&quot;client&quot;</span><span class="p">,</span> <span class="s2">&quot;common&quot;</span><span class="p">)</span>
+            <span class="n">ori_sdt_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span> <span class="s2">&quot;hw_artifacts&quot;</span><span class="p">,</span> <span class="s2">&quot;sdt.dts&quot;</span><span class="p">)</span>
+            <span class="c1">#TODO: Update bsp.yaml before running the below command so that,</span>
+            <span class="c1">#      the default properties of lib get updated successfully.</span>
+            <span class="n">lopper_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;lopper -O </span><span class="si">{</span><span class="n">dstdir</span><span class="si">}</span><span class="s2"> -f </span><span class="si">{</span><span class="n">ori_sdt_path</span><span class="si">}</span><span class="s2"> -- generate_config_object pm_cfg_obj.c </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                <span class="n">lopper_cmd</span><span class="p">,</span>
+                <span class="n">cwd</span> <span class="o">=</span> <span class="n">dst_dir</span><span class="p">,</span>  <span class="c1"># Ensure dst_dir is defined correctly</span>
+                <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Generating PM config object&quot;</span><span class="p">,</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to generate PM config object&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Library.modify_cmake_subdirs"><a class="viewcode-back" href="../library_utils.html#library_utils.Library.modify_cmake_subdirs">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">modify_cmake_subdirs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib_list</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;add&quot;</span><span class="p">):</span>
+        <span class="n">cmake_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="p">,</span> <span class="s2">&quot;CMakeLists.txt&quot;</span><span class="p">)</span>
+        <span class="n">cmake_lines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">bsp_sudirs_substr</span> <span class="o">=</span> <span class="s2">&quot;set (BSP_LIBSRC_SUBDIRS &quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">cmake_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">cmake_lines</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">line_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">cmake_lines</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">cmake_lines</span><span class="p">[</span><span class="n">line_index</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">bsp_sudirs_substr</span><span class="p">):</span>
+                <span class="n">subdir_line</span> <span class="o">=</span> <span class="n">cmake_lines</span><span class="p">[</span><span class="n">line_index</span><span class="p">]</span>
+                <span class="n">subdir_space_sep_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">rf</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">bsp_sudirs_substr</span><span class="p">)</span><span class="si">}</span><span class="s1">(.+?)\)&#39;</span><span class="p">,</span> <span class="n">subdir_line</span><span class="p">)</span>
+                <span class="n">subdir_list</span> <span class="o">=</span> <span class="n">subdir_space_sep_str</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">action</span><span class="o">==</span><span class="s1">&#39;add&#39;</span><span class="p">:</span>
+                    <span class="n">subdir_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">subdir_list</span> <span class="o">+</span> <span class="n">lib_list</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">action</span><span class="o">==</span><span class="s1">&#39;remove&#39;</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">lib_name</span> <span class="ow">in</span> <span class="n">lib_list</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">lib_name</span> <span class="ow">in</span> <span class="n">subdir_list</span><span class="p">:</span>
+                            <span class="n">subdir_list</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">lib_name</span><span class="p">)</span>
+                <span class="n">cmake_lines</span><span class="p">[</span><span class="n">line_index</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">bsp_sudirs_substr</span><span class="si">}{</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subdir_list</span><span class="p">)</span><span class="si">}</span><span class="s1">)</span><span class="se">\n</span><span class="s1">&#39;</span>
+                <span class="k">break</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">cmake_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">file</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">cmake_lines</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Library.remove_lib"><a class="viewcode-back" href="../library_utils.html#library_utils.Library.remove_lib">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">remove_lib</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_lib_in_bsp</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
+        <span class="n">lib_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">lib</span><span class="p">)</span>
+        <span class="n">base_lib_build_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;build_configs&quot;</span><span class="p">,</span> <span class="s2">&quot;gen_bsp&quot;</span><span class="p">)</span>
+        <span class="n">lib_build_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_lib_build_dir</span><span class="p">,</span> <span class="s2">&quot;libsrc&quot;</span><span class="p">,</span> <span class="n">lib</span><span class="p">)</span>
+        <span class="n">targetdir_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_lib_build_dir</span><span class="p">,</span> <span class="s2">&quot;CMakeFiles&quot;</span><span class="p">,</span> <span class="s2">&quot;TargetDirectories.txt&quot;</span><span class="p">)</span>
+        <span class="n">has_lib_cmake_cache</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">check_if_line_in_file</span><span class="p">(</span><span class="n">targetdir_list</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">lib</span><span class="si">}</span><span class="s1">.dir&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_lib_cmake_cache</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cmake_paths_append</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmake_paths_append</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;cmake -G &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cmake_generator</span><span class="si">}</span><span class="s1">&quot; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span><span class="si">}</span><span class="s1"> -DSUBDIR_LIST=&quot;ALL&quot; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cmake_paths_append</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="n">cwd</span> <span class="o">=</span> <span class="n">base_lib_build_dir</span><span class="p">,</span>
+                <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Configuring CMake with all Subdir list&quot;</span><span class="p">,</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;CMake Configuration with all Subdir list failed&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Run make clean to remove the respective headers and .a from lib and include folder.</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;nt&quot;</span><span class="p">:</span>
+            <span class="n">base_lib_build_dir</span> <span class="o">=</span> <span class="n">base_lib_build_dir</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                <span class="sa">r</span><span class="s1">&#39;cmake -DCONFIG=&quot;&quot; -P CMakeFiles\clean_additional.cmake&#39;</span><span class="p">,</span>
+                <span class="n">cwd</span> <span class="o">=</span> <span class="n">base_lib_build_dir</span><span class="p">,</span>
+                <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Running CMake clean &quot;</span><span class="p">,</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to run CMake clean &quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+                <span class="s1">&#39;cmake -DCONFIG=&quot;&quot; -P CMakeFiles/clean_additional.cmake&#39;</span><span class="p">,</span>
+                <span class="n">cwd</span> <span class="o">=</span> <span class="n">base_lib_build_dir</span><span class="p">,</span>
+                <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Running CMake clean &quot;</span><span class="p">,</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to run CMake clean &quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># Remove library src folder from libsrc</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">lib_path</span><span class="p">)</span>
+        <span class="c1"># Remove cmake build folder from cmake build area.</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">lib_build_dir</span><span class="p">)</span>
+        <span class="c1"># Update library config file</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="n">lib</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;remove&quot;</span><span class="p">)</span>
+        <span class="n">dump</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">discard_dump</span><span class="p">()</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;ninja CMakeFiles/rebuild_cache.util &gt; </span><span class="si">{</span><span class="n">dump</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">cwd</span> <span class="o">=</span> <span class="n">base_lib_build_dir</span><span class="p">,</span>
+            <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot; Rebuilding CMake cache.util &quot;</span><span class="p">,</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot; Failed to rebuild CMake cache.util &quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modify_cmake_subdirs</span><span class="p">([</span><span class="n">lib</span><span class="p">],</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;remove&quot;</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, PREETHI C.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

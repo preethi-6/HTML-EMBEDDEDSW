@@ -1,0 +1,226 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>main &mdash; EMBEDDEDSW DOCUMENATION 2025.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=e5803c29"></script>
+      <script src="../_static/doctools.js?v=888ff710"></script>
+      <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EMBEDDEDSW DOCUMENATION
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">my_files</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EMBEDDEDSW DOCUMENATION</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">main</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for main</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2023 - 2024 Advanced Micro Devices, Inc.  All rights reserved.</span>
+<span class="c1"># SPDX-License-Identifier: MIT</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;LOCAL_EMPYRO_SCRIPTS&quot;</span><span class="p">):</span>
+    <span class="n">local_scripts_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;LOCAL_EMPYRO_SCRIPTS&quot;</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">local_scripts_path</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[INFO]: LOCAL_EMPYRO_SCRIPTS variable is set to </span><span class="si">{</span><span class="n">local_scripts_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">build_app</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">build_app_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">build_bsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">build_bsp_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">config_bsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">config_bsp_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">create_app</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">create_app_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">create_bsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">create_bsp_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">create_example</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">create_example_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">get_template_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">get_template_data_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">load_example</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">load_example_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">reconfig_bsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">reconfig_bsp_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">regen_bsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">regen_bsp_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">regen_linker</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">regen_liner_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">repo</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">repo_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">retarget_app</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">retarget_app_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">validate_bsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">validate_bsp_main</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_file</span>
+
+<div class="viewcode-block" id="info"><a class="viewcode-back" href="../main.html#main.info">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">info</span><span class="p">():</span>
+    <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\b</span><span class="s2">Usage: empyro [COMMAND] [OPTIONS]...</span>
+<span class="s2">Create, Configure, Organize and Build the BSP and the Applications</span>
+<span class="s2">targeted for AMD-Xilinx SOCs and FPGAs</span>
+
+<span class="s2">List of COMMANDS</span>
+
+<span class="s2">  create_app          Create a template application for the given BSP</span>
+<span class="s2">  create_bsp          Create BSP for the given sdt, os, processor and template</span>
+<span class="s2">                      application</span>
+<span class="s2">  build_app           Build the given application.</span>
+<span class="s2">                      It expects either -w &lt;app ws path&gt; or</span>
+<span class="s2">                      --src_dir &lt;app src dir path&gt; and --build_dir &lt;app build</span>
+<span class="s2">                      dir path&gt; passed during create_app</span>
+<span class="s2">  build_bsp           Build the BSP</span>
+<span class="s2">  config_bsp          Configure the BSP settings</span>
+<span class="s2">  create_example      Create driver or library example using the BSP path</span>
+<span class="s2">  get_template_data   Fetch all the template application related data from</span>
+<span class="s2">                      EmbeddedSW yamls and put it into a yaml file</span>
+<span class="s2">  load_example        Load example meta-data for given BSP</span>
+<span class="s2">  reconfig_bsp        Reconfigure the BSP</span>
+<span class="s2">  regen_bsp           Regenerate the BSP</span>
+<span class="s2">  regen_linker        Regenerate the linker script for given application</span>
+<span class="s2">  repo                Set EmbeddedSW repository path</span>
+<span class="s2">  retarget_app        Re-target the application to a different BSP</span>
+<span class="s2">  validate_bsp        Validate given BSP against a template application</span>
+
+<span class="s2">COMMAND without OPTIONS</span>
+<span class="s2">  -h, --help          Show this help message and exit</span>
+<span class="s2">  --version           Show the binary version along with commit details if</span>
+<span class="s2">                      available</span>
+
+<span class="s2">Examples:</span>
+
+<span class="s2">Create BSP and hello world application using:</span>
+
+<span class="s2">  # Set EmbeddedSW repository path</span>
+<span class="s2">  empyro repo -st ./embeddedsw</span>
+
+<span class="s2">  # Create BSP for hello world application targeting APU_0 of a ZynqMP Soc</span>
+<span class="s2">  empyro create_bsp -w hello_world_bsp -s /home/abc/dts/system-top.dts</span>
+<span class="s2">  -p psu_cortexa53_0 -t hello_world</span>
+
+<span class="s2">  # Create the hello world application template, link it to the created BSP</span>
+<span class="s2">  empyro create_app -d hello_world_bsp -t hello_world -w hello_world_app</span>
+
+<span class="s2">  # Build BSP and hello world application</span>
+<span class="s2">  empyro build_app -w hello_world_app</span>
+
+<span class="s2">Use &quot;empyro [COMMAND] -h&quot; for [OPTIONS] available with [COMMAND].</span>
+<span class="s2">&quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">info</span><span class="p">)</span></div>
+
+<span class="n">func_map</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;create_app&quot;</span> <span class="p">:</span> <span class="n">create_app_main</span><span class="p">,</span>
+    <span class="s2">&quot;create_bsp&quot;</span> <span class="p">:</span> <span class="n">create_bsp_main</span><span class="p">,</span>
+    <span class="s2">&quot;build_app&quot;</span> <span class="p">:</span> <span class="n">build_app_main</span><span class="p">,</span>
+    <span class="s2">&quot;build_bsp&quot;</span> <span class="p">:</span> <span class="n">build_bsp_main</span><span class="p">,</span>
+    <span class="s2">&quot;config_bsp&quot;</span> <span class="p">:</span> <span class="n">config_bsp_main</span><span class="p">,</span>
+    <span class="s2">&quot;create_example&quot;</span> <span class="p">:</span> <span class="n">create_example_main</span><span class="p">,</span>
+    <span class="s2">&quot;get_template_data&quot;</span> <span class="p">:</span> <span class="n">get_template_data_main</span><span class="p">,</span>
+    <span class="s2">&quot;load_example&quot;</span> <span class="p">:</span> <span class="n">load_example_main</span><span class="p">,</span>
+    <span class="s2">&quot;reconfig_bsp&quot;</span> <span class="p">:</span> <span class="n">reconfig_bsp_main</span><span class="p">,</span>
+    <span class="s2">&quot;regen_linker&quot;</span> <span class="p">:</span> <span class="n">regen_liner_main</span><span class="p">,</span>
+    <span class="s1">&#39;repo&#39;</span> <span class="p">:</span> <span class="n">repo_main</span><span class="p">,</span>
+    <span class="s2">&quot;retarget_app&quot;</span> <span class="p">:</span> <span class="n">retarget_app_main</span><span class="p">,</span>
+    <span class="s2">&quot;validate_bsp&quot;</span> <span class="p">:</span> <span class="n">validate_bsp_main</span><span class="p">,</span>
+    <span class="s2">&quot;regen_bsp&quot;</span> <span class="p">:</span> <span class="n">regen_bsp_main</span><span class="p">,</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../main.html#main.main">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># Check if a command is provided</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">info</span><span class="p">()</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
+
+    <span class="c1"># Get the command</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Route to appropriate module&#39;s main function based on command</span>
+    <span class="k">if</span> <span class="n">command</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;-h&quot;</span><span class="p">,</span><span class="s2">&quot;--help&quot;</span><span class="p">):</span>
+        <span class="n">info</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">command</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;--version&quot;</span><span class="p">):</span>
+        <span class="n">version_file_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span> <span class="s1">&#39;VERSION&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">is_file</span><span class="p">(</span><span class="n">version_file_path</span><span class="p">)):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">version_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">version</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.0&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">version</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">command</span> <span class="ow">in</span> <span class="n">func_map</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">func_map</span><span class="p">[</span><span class="n">command</span><span class="p">](</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">info</span><span class="p">()</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, PREETHI C.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

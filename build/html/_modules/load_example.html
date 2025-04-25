@@ -1,0 +1,249 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>load_example &mdash; EMBEDDEDSW DOCUMENATION 2025.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=e5803c29"></script>
+      <script src="../_static/doctools.js?v=888ff710"></script>
+      <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EMBEDDEDSW DOCUMENATION
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">my_files</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EMBEDDEDSW DOCUMENATION</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">load_example</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for load_example</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.</span>
+<span class="c1"># SPDX-License-Identifier: MIT</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module loads the driver example meta-data</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">utils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">build_bsp</span><span class="w"> </span><span class="kn">import</span> <span class="n">BSP</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="cmake_drv_custom_target"><a class="viewcode-back" href="../load_example.html#load_example.cmake_drv_custom_target">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">cmake_drv_custom_target</span><span class="p">(</span><span class="n">proc</span><span class="p">,</span> <span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">sdt</span><span class="p">,</span> <span class="n">cmake_drv_name_list</span><span class="p">,</span> <span class="n">cmake_drv_path_list</span><span class="p">):</span>
+    <span class="n">cmake_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">set(DRIVER_TARGETS </span><span class="si">{</span><span class="n">cmake_drv_name_list</span><span class="si">}</span><span class="s1">)</span>
+<span class="s1">set(DRIVER_LOCATIONS </span><span class="si">{</span><span class="n">cmake_drv_path_list</span><span class="si">}</span><span class="s1">)</span>
+
+<span class="s1">list(LENGTH DRIVER_TARGETS no_of_drivers)</span>
+<span class="s1">set(index 0)</span>
+
+<span class="s1">while($</span><span class="se">{{</span><span class="s1">index</span><span class="se">}}</span><span class="s1"> LESS $</span><span class="se">{{</span><span class="s1">no_of_drivers</span><span class="se">}}</span><span class="s1">)</span>
+<span class="s1">    list(GET DRIVER_TARGETS $</span><span class="se">{{</span><span class="s1">index</span><span class="se">}}</span><span class="s1"> drv)</span>
+<span class="s1">    list(GET DRIVER_LOCATIONS $</span><span class="se">{{</span><span class="s1">index</span><span class="se">}}</span><span class="s1"> drv_dir)</span>
+<span class="s1">    set(exp_dir &quot;$</span><span class="se">{{</span><span class="s1">drv_dir</span><span class="se">}}</span><span class="s1">/examples&quot;)</span>
+<span class="s1">    add_custom_target(</span>
+<span class="s1">        $</span><span class="se">{{</span><span class="s1">drv</span><span class="se">}}</span><span class="s1">_example ALL</span>
+<span class="s1">        COMMAND lopper -f -O </span><span class="si">{</span><span class="n">libsrc_folder</span><span class="si">}</span><span class="s1">/$</span><span class="se">{{</span><span class="s1">drv</span><span class="se">}}</span><span class="s1"> </span><span class="si">{</span><span class="n">sdt</span><span class="si">}</span><span class="s1"> -- bmcmake_metadata_xlnx </span><span class="si">{</span><span class="n">proc</span><span class="si">}</span><span class="s1"> $</span><span class="se">{{</span><span class="s1">exp_dir</span><span class="se">}}</span><span class="s1"> drvcmake_metadata</span>
+<span class="s1">        BYPRODUCTS x$</span><span class="se">{{</span><span class="s1">drv</span><span class="se">}}</span><span class="s1">_exlist.yaml)</span>
+<span class="s1">    MATH(EXPR index &quot;$</span><span class="se">{{</span><span class="s1">index</span><span class="se">}}</span><span class="s1">+1&quot;)</span>
+<span class="s1">endwhile()</span>
+<span class="s1">&#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">cmake_cmd</span></div>
+
+<div class="viewcode-block" id="LoadExample"><a class="viewcode-back" href="../load_example.html#load_example.LoadExample">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">LoadExample</span><span class="p">(</span><span class="n">BSP</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class contains attributes and functions to load the example meta-data in</span>
+<span class="sd">    bsp.yaml file, It takes the domain as input, reads the domain configuration</span>
+<span class="sd">    file present in the path to get the required inputs and updates the bsp.yaml.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain_path</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_abs_path</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;domain_path&quot;</span><span class="p">))</span>
+        <span class="n">BSP</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LoadExample.update_example"><a class="viewcode-back" href="../load_example.html#load_example.LoadExample.update_example">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">update_example</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">domain_data</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fetch_yaml_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">)</span>
+        <span class="n">build_metadata</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="s2">&quot;build_configs&quot;</span><span class="p">,</span> <span class="s2">&quot;exmetadata&quot;</span><span class="p">)</span>
+
+        <span class="c1"># If example metadata is already created return</span>
+        <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_dir</span><span class="p">(</span><span class="n">build_metadata</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Example metadata already exists, Returning&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">iplist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">domain_data</span><span class="p">[</span><span class="s2">&quot;drv_info&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">driver_name_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">driver_path_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ip</span> <span class="ow">in</span> <span class="n">domain_data</span><span class="p">[</span><span class="s2">&quot;drv_info&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">domain_data</span><span class="p">[</span><span class="s2">&quot;drv_info&quot;</span><span class="p">][</span><span class="n">ip</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;None&quot;</span><span class="p">:</span>
+                <span class="n">driver_name_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_data</span><span class="p">[</span><span class="s2">&quot;drv_info&quot;</span><span class="p">][</span><span class="n">ip</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;driver&#39;</span><span class="p">,{}))</span>
+                <span class="n">driver_path_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_data</span><span class="p">[</span><span class="s2">&quot;drv_info&quot;</span><span class="p">][</span><span class="n">ip</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;path&#39;</span><span class="p">,{}))</span>
+
+        <span class="n">driver_name_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">driver_name_list</span><span class="p">))</span>
+        <span class="n">cmake_drv_name_list</span> <span class="o">=</span> <span class="s1">&#39;;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">driver_name_list</span><span class="p">)</span>
+        <span class="n">driver_path_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">driver_path_list</span><span class="p">))</span>
+        <span class="n">cmake_drv_path_list</span> <span class="o">=</span> <span class="s1">&#39;;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">driver_path_list</span><span class="p">)</span>
+
+        <span class="c1"># Create top level CMakeLists.txt inside domain dir</span>
+        <span class="n">cmake_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">build_metadata</span><span class="p">,</span> <span class="s2">&quot;CMakeLists.txt&quot;</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">build_metadata</span><span class="p">)</span>
+
+        <span class="n">cmake_header</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">cmake_minimum_required(VERSION 3.15)</span>
+<span class="s2">project(bsp)</span>
+
+<span class="s2"># Use CMAKE_LIBRARY_PATH in link_directories</span>
+<span class="s2">link_directories($</span><span class="si">{CMAKE_LIBRARY_PATH}</span><span class="s2">)</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="n">cmake_file_cmds</span> <span class="o">=</span> <span class="n">cmake_header</span>
+        <span class="n">cmake_file_cmds</span> <span class="o">+=</span> <span class="n">cmake_drv_custom_target</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdt</span><span class="p">,</span> <span class="n">cmake_drv_name_list</span><span class="p">,</span> <span class="n">cmake_drv_path_list</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmake_paths_append</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmake_paths_append</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">cmake_file_cmds</span> <span class="o">=</span> <span class="n">cmake_file_cmds</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">write_into_file</span><span class="p">(</span><span class="n">cmake_file</span><span class="p">,</span> <span class="n">cmake_file_cmds</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;cmake -G &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cmake_generator</span><span class="si">}</span><span class="s1">&quot; </span><span class="si">{</span><span class="n">build_metadata</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cmake_paths_append</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="n">cwd</span> <span class="o">=</span> <span class="n">build_metadata</span><span class="p">,</span>
+            <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Configuring CMake to gather examples metadata&quot;</span><span class="p">,</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to configure CMake to gather examples metadata&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">dump</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">discard_dump</span><span class="p">()</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">runcmd</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;cmake --build . --parallel 22 --verbose &gt; </span><span class="si">{</span><span class="n">dump</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">cwd</span> <span class="o">=</span> <span class="n">build_metadata</span><span class="p">,</span>
+            <span class="n">log_message</span> <span class="o">=</span> <span class="s2">&quot;Gathering examples metadata&quot;</span><span class="p">,</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to gather examples metadata &quot;</span><span class="p">,</span>
+            <span class="n">verbose_level</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">ip</span><span class="p">,</span><span class="n">data</span> <span class="ow">in</span> <span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;drv_info&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">data</span> <span class="o">!=</span> <span class="s2">&quot;None&quot;</span><span class="p">:</span>
+                <span class="n">driver</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;driver&#39;</span><span class="p">]</span>
+                <span class="n">drv_ex_list_yaml</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">driver</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">driver</span><span class="si">}</span><span class="s2">_exlist.yaml&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_file</span><span class="p">(</span><span class="n">drv_ex_list_yaml</span><span class="p">):</span>
+                    <span class="n">driver_ex</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">(</span><span class="n">drv_ex_list_yaml</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">driver_ex</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">ip</span> <span class="ow">in</span> <span class="n">driver_ex</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">domain_data</span><span class="p">[</span><span class="s2">&quot;drv_info&quot;</span><span class="p">][</span><span class="n">ip</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;examples&quot;</span><span class="p">:</span><span class="n">driver_ex</span><span class="p">[</span><span class="n">ip</span><span class="p">]})</span>
+
+        <span class="n">utils</span><span class="o">.</span><span class="n">update_yaml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_config_file</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span> <span class="s2">&quot;drv_info&quot;</span><span class="p">,</span> <span class="n">domain_data</span><span class="p">[</span><span class="s2">&quot;drv_info&quot;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">drv</span> <span class="ow">in</span> <span class="n">driver_name_list</span><span class="p">:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">drv</span><span class="p">,</span>  <span class="s2">&quot;*.cmake&quot;</span><span class="p">),</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libsrc_folder</span><span class="p">,</span> <span class="n">drv</span><span class="p">,</span> <span class="s2">&quot;*.yaml&quot;</span><span class="p">),</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="load_bsp"><a class="viewcode-back" href="../load_example.html#load_example.load_bsp">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">load_bsp</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to load the example meta-data for a given domain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">LoadExample</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">update_example</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s2">&quot;Successfully loaded all the valid examples for the BSP&quot;</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../load_example.html#load_example.main">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">arguments</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Load the example meta-data for a given domain&quot;</span><span class="p">,</span>
+        <span class="n">usage</span><span class="o">=</span><span class="s1">&#39;use &quot;empyro load_example --help&quot; for more information&#39;</span><span class="p">,</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">RawTextHelpFormatter</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">required_argument</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Required arguments&quot;</span><span class="p">)</span>
+    <span class="n">required_argument</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-d&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--domain_path&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Domain directory Path&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-v&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--verbose&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;count&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Increase output verbosity&#39;</span>
+    <span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">arguments</span><span class="p">))</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">setup_log</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;verbose&quot;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s2">&quot;Loading Valid Example names for BSP&quot;</span> <span class="p">)</span>
+    <span class="n">load_bsp</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, PREETHI C.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
